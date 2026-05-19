@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PES Trimer — Multi-method · LDM + HOMA(EN/GEO)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg-page:#f6f5f1; --bg-primary:#fff; --bg-secondary:#ebe9e2; --bg-info:#e6f1fb;
+    --text-primary:#1f1f1d; --text-secondary:#5f5e5a; --text-tertiary:#888780; --text-info:#0C447C;
+    --border-tertiary:rgba(0,0,0,0.12); --border-secondary:rgba(0,0,0,0.25); --border-info:#378ADD;
+    --radius-md:8px; --radius-lg:12px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg-page:#1a1a18; --bg-primary:#232320; --bg-secondary:#2c2c2a; --bg-info:#0C447C;
+      --text-primary:#ebebe5; --text-secondary:#b4b2a9; --text-tertiary:#888780; --text-info:#B5D4F4;
+      --border-tertiary:rgba(255,255,255,0.12); --border-secondary:rgba(255,255,255,0.25);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-page);color:var(--text-primary);font-family:var(--font-sans);font-size:14px;line-height:1.5}
+  .container{max-width:1240px;margin:0 auto;padding:24px 20px 40px}
+  h1{font-size:22px;font-weight:500;margin:0 0 4px}
+  .lede{font-size:13px;color:var(--text-secondary);margin:0 0 14px}
+  .toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--bg-primary);border:0.5px solid var(--border-tertiary);border-radius:var(--radius-lg)}
+  .toolbar-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .toolbar-label{font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;min-width:90px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border:0.5px solid var(--border-tertiary);border-radius:999px;background:var(--bg-primary);cursor:pointer;font-size:12px;user-select:none;transition:all 0.12s}
+  .chip:hover{border-color:var(--border-secondary)}
+  .chip input{margin:0}
+  .chip-swatch{width:14px;height:3px;border-radius:1px;display:inline-block}
+  .chip.dim{color:var(--text-tertiary)}
+  .chip.dim .chip-swatch{opacity:0.4}
+  .chip-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .descBtn{font-size:11.5px;padding:5px 10px;border:0.5px solid var(--border-tertiary);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary);cursor:pointer;line-height:1.2;font-family:inherit;transition:all 0.12s}
+  .descBtn:hover{border-color:var(--border-secondary)}
+  .descBtn.active{background:var(--bg-info);color:var(--text-info);border-color:var(--border-info);font-weight:500}
+  .descGroupLabel{font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;margin-right:4px;align-self:center}
+  .subcomp-row{display:none;gap:6px;align-items:center;padding:6px 10px;margin-top:4px;background:var(--bg-info);border:0.5px solid var(--border-info);border-radius:var(--radius-md)}
+  .subcomp-row.visible{display:flex;flex-wrap:wrap}
+  .subcomp-label{font-size:10.5px;color:var(--text-info);font-weight:500;text-transform:uppercase;letter-spacing:0.04em}
+  .subBtn{font-size:11px;padding:3px 8px;border:0.5px solid var(--border-info);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;font-family:inherit}
+  .subBtn.active{background:var(--border-info);color:#fff;font-weight:500}
+  .grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .chart-card{background:var(--bg-primary);border:0.5px solid var(--border-tertiary);border-radius:var(--radius-lg);padding:12px}
+  .chart-wrap{position:relative;width:100%;height:440px}
+  .chart-legend{display:flex;gap:10px;justify-content:center;margin-top:8px;font-size:11px;color:var(--text-secondary);flex-wrap:wrap}
+  .info-panel{background:var(--bg-secondary);border-radius:var(--radius-lg);padding:14px;min-height:440px}
+  table{width:100%;border-collapse:collapse}
+  .footer-note{margin-top:24px;padding-top:14px;border-top:0.5px solid var(--border-tertiary);font-size:11.5px;color:var(--text-secondary);line-height:1.6}
+  button{font-family:inherit;cursor:pointer;padding:5px 10px;border:0.5px solid var(--border-tertiary);border-radius:var(--radius-md);background:var(--bg-primary);color:var(--text-primary)}
+  .method-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+  .method-tab{font-size:11px;padding:3px 8px;border:0.5px solid var(--border-tertiary);border-radius:var(--radius-md);background:transparent;color:var(--text-secondary);cursor:pointer}
+  .method-tab.active{color:var(--text-primary);border-color:var(--border-secondary);font-weight:500}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Torsional PES — Trimer · LDM + HOMA components</h1>
+  <p class="lede">
+    B3LYP relaxed scan of D(12,6,7,11). Energies aligned per method (opt_1 = 0 kcal mol⁻¹).
+    Pick a descriptor: HOMA uses 36 calculated points and offers EN/GEO sub-components; LDM descriptors use 7-anchor symmetric interpolation.
+  </p>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <span class="toolbar-label">Methods</span>
+      <div id="methodChips" class="chip-row"></div>
+    </div>
+    <div class="toolbar-row">
+      <span class="toolbar-label">Descriptor</span>
+      <div id="descBar" class="chip-row"></div>
+    </div>
+    <div id="subRow" class="subcomp-row">
+      <span class="subcomp-label">HOMA components</span>
+      <button class="subBtn active" data-comp="H" title="Harmonic Oscillator Model of Aromaticity (Krygowski)">HOMA</button>
+      <button class="subBtn" data-comp="E" title="Défaut de position moyenne — mean deviation of bond lengths from R_opt">EN</button>
+      <button class="subBtn" data-comp="G" title="Défaut d'égalisation des liaisons — bond-length alternation around the mean">GEO</button>
+      <span style="width:0.5px;height:18px;background:var(--border-info);margin:0 4px;"></span>
+      <span class="subcomp-label">Show rings</span>
+      <button class="subBtn active" data-ring="r1" style="color:#185FA5;">Ring 1</button>
+      <button class="subBtn active" data-ring="r2" style="color:#BA7517;">Ring 2</button>
+      <button class="subBtn active" data-ring="r3" style="color:#993556;">Ring 3</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="chart-card">
+      <div class="chart-wrap">
+        <canvas id="pesChart" role="img" aria-label="Multi-method PES with optional descriptor overlay on the right axis.">PES of trimer at multiple levels of theory with descriptor overlay.</canvas>
+      </div>
+      <div id="chartLegend" class="chart-legend"></div>
+    </div>
+
+    <div class="info-panel">
+      <div id="infoEmpty" style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        <p style="margin:0 0 0.5rem;"><strong style="font-weight:500;color:var(--text-primary);">Stationary points</strong></p>
+        <div style="font-size:12.5px;">
+          <div style="display:flex;align-items:center;gap:6px;padding:2px 0;"><span style="width:9px;height:9px;border-radius:50%;background:#1D9E75;"></span>opt_1 — Global minimum (≈ 176°)</div>
+          <div style="display:flex;align-items:center;gap:6px;padding:2px 0;"><span style="width:9px;height:9px;border-radius:50%;background:#D85A30;"></span>opt_TS1 — Main barrier (≈ 86°)</div>
+          <div style="display:flex;align-items:center;gap:6px;padding:2px 0;"><span style="width:9px;height:9px;border-radius:50%;background:#1D9E75;"></span>opt_2 — Meta-stable (≈ 26°)</div>
+          <div style="display:flex;align-items:center;gap:6px;padding:2px 0;"><span style="width:9px;height:9px;border-radius:50%;background:#D85A30;"></span>opt_TS2 — Local max (≈ 0°)</div>
+        </div>
+        <p style="margin:0.9rem 0 0.4rem;font-size:12px;color:var(--text-primary);font-weight:500;">Encoding</p>
+        <ul style="margin:0 0 0.5rem;padding-left:16px;font-size:12px;">
+          <li><strong style="font-weight:500;">PES + LDM descriptors:</strong> color = method, line style = ring</li>
+          <li><strong style="font-weight:500;">HOMA (36-pt):</strong> color = <span style="color:#185FA5;">R1</span>/<span style="color:#BA7517;">R2</span>/<span style="color:#993556;">R3</span>, line style = component (HOMA solid · EN dashed · GEO dotted), marker = method</li>
+        </ul>
+        <p style="margin:0.7rem 0 0.3rem;font-size:11.5px;color:var(--text-primary);font-weight:500;">Krygowski decomposition</p>
+        <ul style="margin:0 0 0.5rem;padding-left:16px;font-size:11.5px;color:var(--text-secondary);">
+          <li><strong style="font-weight:500;color:var(--text-primary);">EN</strong> — défaut de position moyenne (écart moyen des liaisons par rapport à R<sub>opt</sub>)</li>
+          <li><strong style="font-weight:500;color:var(--text-primary);">GEO</strong> — défaut d'égalisation des liaisons (alternance des longueurs autour de la moyenne)</li>
+          <li>HOMA = 1 − EN − GEO</li>
+        </ul>
+        <p style="margin:0.9rem 0 0.4rem;font-size:12px;color:var(--text-primary);font-weight:500;">How to use</p>
+        <ul style="margin:0;padding-left:16px;font-size:12px;">
+          <li>Tick methods to toggle PES curves.</li>
+          <li>Click a descriptor button to overlay it.</li>
+          <li>For HOMA: toggle components (EN, GEO) and rings independently.</li>
+          <li>Click any stationary point → table here.</li>
+        </ul>
+      </div>
+      <div id="infoContent" style="display:none;"></div>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    <strong style="font-weight:500;color:var(--text-primary);">Methods.</strong>
+    B3LYP/6-31G, B3LYP/6-31G(d) and B3LYP/6-311+G(d,p) relaxed scans of D(12,6,7,11) using Gaussian 16.
+    Energies are referenced to opt_1 per method (φ ≈ 176.5°, ΔE = 0).
+    HOMA decomposition (Krygowski): HOMA = 1 − EN − GEO, where
+    <em>EN</em> (« défaut de position moyenne ») measures the mean deviation of the bond lengths from R<sub>opt</sub> = 1.3913 Å, and
+    <em>GEO</em> (« défaut d'égalisation des liaisons ») measures the bond-length alternation around the mean.
+    HOMA, EN and GEO are evaluated at all 36 optimised geometries per ring.
+    Six LDM-family descriptors are tabulated at 4 stationary points only; their curves are 7-anchor Catmull–Rom interpolations (3 mirror anchors derived from PES C₂ symmetry about φ = 0°).
+  </p>
+
+</div>
+
+<script>
+(function(){
+
+  // =================== DATA ===================
+  const PES = {
+    '6-31G': [[-173.488,0.0106],[-163.488,0.1058],[-153.488,0.3344],[-143.488,0.7387],[-133.488,1.3199],[-123.488,2.026],[-113.489,2.7673],[-103.489,3.4056],[-93.489,3.7718],[-83.488,3.7211],[-73.488,3.2921],[-63.489,2.6833],[-53.488,2.0916],[-43.489,1.6463],[-33.489,1.404],[-23.488,1.3538],[-13.489,1.4225],[-3.489,1.4946],[6.512,1.4794],[16.512,1.3958],[26.512,1.3519],[36.512,1.4552],[46.512,1.7608],[56.512,2.2596],[66.512,2.8734],[76.511,3.4514],[86.512,3.7824],[96.512,3.7005],[106.512,3.2331],[116.512,2.5468],[126.512,1.8039],[136.512,1.1277],[146.512,0.5968],[156.512,0.2481],[166.512,0.0656],[176.512,0]],
+    '6-31G(d)': [[-173.488,0.0094],[-163.488,-0.0068],[-153.488,0.0518],[-143.488,0.2805],[-133.488,0.7103],[-123.488,1.3134],[-113.488,2.004],[-103.489,2.641],[-93.489,3.0242],[-83.488,2.9695],[-73.489,2.5195],[-63.488,1.8948],[-53.489,1.3055],[-43.489,0.8831],[-33.489,0.6847],[-23.489,0.6991],[-13.489,0.8443],[-3.489,0.9799],[6.512,0.9758],[16.512,0.8523],[26.512,0.7518],[36.512,0.8063],[46.512,1.0791],[56.512,1.5614],[66.512,2.1735],[76.512,2.7557],[86.512,3.0804],[96.512,2.9613],[106.512,2.4474],[116.512,1.7487],[126.512,1.0529],[136.512,0.4834],[146.512,0.1131],[156.512,-0.0466],[166.512,-0.049],[176.512,0]],
+    '6-311+G(d,p)': [[-173.488,-0.0271],[-163.488,-0.0874],[-153.488,-0.0924],[-143.488,0.0538],[-133.488,0.3864],[-123.488,0.8815],[-113.488,1.4566],[-103.488,1.9899],[-93.488,2.3152],[-83.488,2.2829],[-73.488,1.9146],[-63.488,1.399],[-53.489,0.9213],[-43.489,0.6061],[-33.489,0.5049],[-23.489,0.5995],[-13.489,0.8367],[-3.489,0.9982],[6.512,0.9944],[16.512,0.8074],[26.512,0.6412],[36.512,0.6086],[46.512,0.7778],[56.512,1.1462],[66.512,1.6396],[76.512,2.1117],[86.512,2.3651],[96.512,2.2469],[106.512,1.8115],[116.512,1.2283],[126.512,0.6496],[136.512,0.1877],[146.512,-0.0889],[156.512,-0.172],[166.512,-0.1165],[176.512,0]]
+  };
+
+  // 36-point HOMA components: each entry = {p:phi, r1:[HOMA, EN, GEO], r2, r3}
+  const HOMA36 = {
+    '6-31G': [{p:-173.49,r1:[0.3089,0.6077,0.0834],r2:[0.245,0.7129,0.0422],r3:[0.3086,0.6079,0.0836]},{p:-163.49,r1:[0.3082,0.6081,0.0837],r2:[0.246,0.7111,0.0429],r3:[0.3102,0.6058,0.084]},{p:-153.49,r1:[0.3099,0.6065,0.0837],r2:[0.2472,0.7087,0.0441],r3:[0.3092,0.6054,0.0854]},{p:-143.49,r1:[0.3092,0.6065,0.0843],r2:[0.2473,0.7068,0.0459],r3:[0.3105,0.6026,0.0869]},{p:-133.49,r1:[0.3081,0.6071,0.0848],r2:[0.2447,0.7067,0.0486],r3:[0.3089,0.6015,0.0897]},{p:-123.49,r1:[0.3093,0.6055,0.0852],r2:[0.2412,0.7079,0.051],r3:[0.3034,0.6037,0.0929]},{p:-113.49,r1:[0.3096,0.6048,0.0856],r2:[0.2356,0.7102,0.0541],r3:[0.298,0.6052,0.0968]},{p:-103.49,r1:[0.3098,0.6043,0.0859],r2:[0.2305,0.7122,0.0572],r3:[0.2914,0.6078,0.1007]},{p:-93.49,r1:[0.3101,0.6038,0.0861],r2:[0.2268,0.7134,0.0598],r3:[0.2878,0.6085,0.1036]},{p:-83.49,r1:[0.3106,0.6034,0.0859],r2:[0.2286,0.7116,0.0597],r3:[0.289,0.6076,0.1034]},{p:-73.49,r1:[0.31,0.6042,0.0858],r2:[0.2343,0.7084,0.0573],r3:[0.2932,0.6061,0.1008]},{p:-63.49,r1:[0.3098,0.6047,0.0855],r2:[0.2406,0.7056,0.0538],r3:[0.3003,0.6031,0.0966]},{p:-53.49,r1:[0.3091,0.6058,0.0851],r2:[0.2483,0.7013,0.0504],r3:[0.3084,0.5993,0.0923]},{p:-43.49,r1:[0.3084,0.6069,0.0847],r2:[0.2564,0.6965,0.047],r3:[0.3168,0.595,0.0882]},{p:-33.49,r1:[0.3078,0.6079,0.0843],r2:[0.2646,0.6915,0.0439],r3:[0.3254,0.5903,0.0843]},{p:-23.49,r1:[0.3082,0.6079,0.0839],r2:[0.2698,0.6891,0.0411],r3:[0.3341,0.5852,0.0806]},{p:-13.49,r1:[0.3071,0.6092,0.0837],r2:[0.2769,0.6842,0.0389],r3:[0.3394,0.5822,0.0784]},{p:-3.49,r1:[0.3076,0.609,0.0834],r2:[0.2788,0.6834,0.0378],r3:[0.3431,0.5799,0.077]},{p:6.51,r1:[0.3074,0.609,0.0835],r2:[0.2787,0.6833,0.038],r3:[0.3422,0.5805,0.0773]},{p:16.51,r1:[0.3074,0.6089,0.0837],r2:[0.2751,0.6854,0.0395],r3:[0.3382,0.5829,0.0789]},{p:26.51,r1:[0.3085,0.6076,0.0839],r2:[0.2682,0.6898,0.042],r3:[0.3313,0.587,0.0817]},{p:36.51,r1:[0.3085,0.6072,0.0843],r2:[0.2612,0.6939,0.0449],r3:[0.3232,0.5914,0.0854]},{p:46.51,r1:[0.3085,0.6067,0.0849],r2:[0.254,0.698,0.048],r3:[0.3145,0.5961,0.0893]},{p:56.51,r1:[0.3103,0.6047,0.0851],r2:[0.2452,0.7033,0.0515],r3:[0.3055,0.6007,0.0937]},{p:66.51,r1:[0.3095,0.605,0.0856],r2:[0.2389,0.7063,0.0548],r3:[0.2982,0.604,0.0979]},{p:76.51,r1:[0.31,0.6041,0.0859],r2:[0.2325,0.7095,0.0579],r3:[0.2917,0.6067,0.1016]},{p:86.51,r1:[0.3102,0.6037,0.0861],r2:[0.2286,0.7118,0.0596],r3:[0.2879,0.6084,0.1037]},{p:96.51,r1:[0.3097,0.6042,0.0861],r2:[0.2277,0.7133,0.059],r3:[0.2891,0.6081,0.1028]},{p:106.51,r1:[0.3101,0.6042,0.0858],r2:[0.232,0.7117,0.0563],r3:[0.2928,0.6075,0.0996]},{p:116.51,r1:[0.3094,0.6052,0.0855],r2:[0.2375,0.7094,0.0531],r3:[0.2996,0.6049,0.0955]},{p:126.51,r1:[0.3092,0.6058,0.085],r2:[0.2427,0.7072,0.0502],r3:[0.3053,0.6029,0.0918]},{p:136.51,r1:[0.3091,0.6063,0.0846],r2:[0.2461,0.7063,0.0476],r3:[0.309,0.6023,0.0887]},{p:146.51,r1:[0.3087,0.6071,0.0843],r2:[0.2471,0.7075,0.0454],r3:[0.3108,0.6028,0.0864]},{p:156.51,r1:[0.3085,0.6076,0.0839],r2:[0.2466,0.7096,0.0438],r3:[0.3104,0.6048,0.0848]},{p:166.51,r1:[0.3083,0.6081,0.0836],r2:[0.2456,0.7118,0.0426],r3:[0.3091,0.607,0.0839]},{p:176.51,r1:[0.3087,0.6078,0.0834],r2:[0.2451,0.7129,0.0421],r3:[0.3085,0.608,0.0835]}],
+    '6-31G(d)': [{p:-173.49,r1:[0.778,0.1653,0.0566],r2:[0.7563,0.2153,0.0283],r3:[0.7766,0.1668,0.0565]},{p:-163.49,r1:[0.7779,0.1653,0.0568],r2:[0.7568,0.2142,0.029],r3:[0.7778,0.1653,0.0569]},{p:-153.49,r1:[0.7779,0.1651,0.057],r2:[0.7583,0.2119,0.0298],r3:[0.7797,0.1631,0.0572]},{p:-143.49,r1:[0.778,0.1648,0.0572],r2:[0.7592,0.2095,0.0312],r3:[0.7811,0.1607,0.0582]},{p:-133.49,r1:[0.7783,0.1643,0.0574],r2:[0.7599,0.2073,0.0328],r3:[0.7818,0.1588,0.0594]},{p:-123.49,r1:[0.7785,0.1638,0.0577],r2:[0.7594,0.2059,0.0348],r3:[0.781,0.1577,0.0614]},{p:-113.49,r1:[0.779,0.1632,0.0578],r2:[0.7592,0.2043,0.0365],r3:[0.7797,0.1569,0.0634]},{p:-103.49,r1:[0.7792,0.1627,0.0581],r2:[0.7573,0.2039,0.0389],r3:[0.7775,0.1568,0.0658]},{p:-93.49,r1:[0.7792,0.1626,0.0582],r2:[0.7572,0.2024,0.0405],r3:[0.7754,0.1569,0.0677]},{p:-83.49,r1:[0.7791,0.1627,0.0582],r2:[0.757,0.2026,0.0404],r3:[0.7748,0.1575,0.0677]},{p:-73.49,r1:[0.7788,0.163,0.0582],r2:[0.7578,0.2034,0.0388],r3:[0.7754,0.1585,0.0661]},{p:-63.49,r1:[0.7789,0.1632,0.0579],r2:[0.7587,0.2046,0.0366],r3:[0.7768,0.1595,0.0637]},{p:-53.49,r1:[0.7786,0.1637,0.0577],r2:[0.7601,0.2055,0.0345],r3:[0.7785,0.16,0.0615]},{p:-43.49,r1:[0.7782,0.1642,0.0576],r2:[0.7617,0.2061,0.0322],r3:[0.781,0.1601,0.0589]},{p:-33.49,r1:[0.7785,0.1645,0.057],r2:[0.7638,0.2063,0.0298],r3:[0.7835,0.1601,0.0564]},{p:-23.49,r1:[0.778,0.1651,0.0569],r2:[0.7655,0.2067,0.0278],r3:[0.7861,0.1596,0.0542]},{p:-13.49,r1:[0.7778,0.1655,0.0567],r2:[0.767,0.2068,0.0262],r3:[0.7877,0.1595,0.0528]},{p:-3.49,r1:[0.7774,0.1658,0.0568],r2:[0.7669,0.2078,0.0253],r3:[0.7892,0.1591,0.0516]},{p:6.51,r1:[0.7775,0.1659,0.0566],r2:[0.7672,0.2073,0.0255],r3:[0.7879,0.1597,0.0524]},{p:16.51,r1:[0.7771,0.1659,0.057],r2:[0.7649,0.2084,0.0266],r3:[0.7878,0.1593,0.0529]},{p:26.51,r1:[0.7771,0.1658,0.0572],r2:[0.763,0.2086,0.0284],r3:[0.7857,0.1595,0.0548]},{p:36.51,r1:[0.7774,0.1653,0.0573],r2:[0.7609,0.2086,0.0305],r3:[0.7828,0.16,0.0572]},{p:46.51,r1:[0.7778,0.1647,0.0575],r2:[0.7589,0.2085,0.0327],r3:[0.7803,0.16,0.0597]},{p:56.51,r1:[0.7782,0.1641,0.0578],r2:[0.7571,0.2079,0.035],r3:[0.7784,0.1596,0.0621]},{p:66.51,r1:[0.7786,0.1634,0.058],r2:[0.7561,0.2066,0.0373],r3:[0.7768,0.1587,0.0645]},{p:76.51,r1:[0.7789,0.163,0.0581],r2:[0.7557,0.205,0.0393],r3:[0.7758,0.1577,0.0666]},{p:86.51,r1:[0.7789,0.1628,0.0583],r2:[0.7561,0.2034,0.0405],r3:[0.776,0.1565,0.0675]},{p:96.51,r1:[0.779,0.1628,0.0583],r2:[0.7576,0.2023,0.0401],r3:[0.7766,0.1564,0.067]},{p:106.51,r1:[0.7788,0.1631,0.0581],r2:[0.7595,0.2024,0.0381],r3:[0.7788,0.1565,0.0647]},{p:116.51,r1:[0.7787,0.1634,0.0579],r2:[0.7613,0.2028,0.0359],r3:[0.7805,0.1571,0.0624]},{p:126.51,r1:[0.7786,0.1638,0.0576],r2:[0.7623,0.2036,0.034],r3:[0.7816,0.1579,0.0604]},{p:136.51,r1:[0.7786,0.1641,0.0573],r2:[0.7622,0.2055,0.0323],r3:[0.7817,0.1595,0.0588]},{p:146.51,r1:[0.7786,0.1644,0.057],r2:[0.7612,0.208,0.0308],r3:[0.7809,0.1615,0.0576]},{p:156.51,r1:[0.7782,0.1649,0.0569],r2:[0.7597,0.2108,0.0295],r3:[0.779,0.164,0.0571]},{p:166.51,r1:[0.7781,0.1651,0.0568],r2:[0.7578,0.2134,0.0288],r3:[0.7773,0.166,0.0567]},{p:176.51,r1:[0.7782,0.1652,0.0567],r2:[0.7564,0.2153,0.0284],r3:[0.7763,0.1671,0.0566]}],
+    '6-311+G(d,p)': [{p:-173.49,r1:[0.7892,0.1536,0.0571],r2:[0.7666,0.2022,0.0311],r3:[0.7861,0.1566,0.0573]},{p:-163.49,r1:[0.7891,0.1536,0.0573],r2:[0.7676,0.2006,0.0317],r3:[0.7878,0.1549,0.0573]},{p:-153.49,r1:[0.7888,0.1535,0.0577],r2:[0.7691,0.1983,0.0326],r3:[0.7899,0.1525,0.0576]},{p:-143.49,r1:[0.7889,0.1532,0.0579],r2:[0.7702,0.1958,0.0339],r3:[0.7915,0.1502,0.0583]},{p:-133.49,r1:[0.7894,0.1526,0.058],r2:[0.7701,0.1941,0.0358],r3:[0.7911,0.1488,0.06]},{p:-123.49,r1:[0.7896,0.1521,0.0582],r2:[0.7699,0.1925,0.0376],r3:[0.791,0.1474,0.0616]},{p:-113.49,r1:[0.7897,0.1519,0.0585],r2:[0.7688,0.1914,0.0397],r3:[0.7896,0.1467,0.0638]},{p:-103.49,r1:[0.7901,0.1513,0.0586],r2:[0.7676,0.1905,0.0419],r3:[0.7877,0.1462,0.066]},{p:-93.49,r1:[0.7897,0.1515,0.0589],r2:[0.767,0.1896,0.0434],r3:[0.7858,0.1463,0.0679]},{p:-83.49,r1:[0.7899,0.1513,0.0588],r2:[0.767,0.1897,0.0433],r3:[0.7853,0.1469,0.0678]},{p:-73.49,r1:[0.7898,0.1516,0.0586],r2:[0.7678,0.1904,0.0419],r3:[0.7852,0.1482,0.0667]},{p:-63.49,r1:[0.7898,0.1519,0.0583],r2:[0.7688,0.1915,0.0396],r3:[0.7861,0.1493,0.0646]},{p:-53.49,r1:[0.7897,0.1522,0.0581],r2:[0.77,0.1926,0.0373],r3:[0.7875,0.1503,0.0622]},{p:-43.49,r1:[0.7896,0.1526,0.0578],r2:[0.7718,0.1933,0.0349],r3:[0.7898,0.1506,0.0596]},{p:-33.49,r1:[0.789,0.1534,0.0576],r2:[0.774,0.1936,0.0324],r3:[0.7929,0.1502,0.0569]},{p:-23.49,r1:[0.789,0.1537,0.0573],r2:[0.7758,0.194,0.0302],r3:[0.7954,0.15,0.0546]},{p:-13.49,r1:[0.7886,0.1542,0.0573],r2:[0.777,0.1945,0.0285],r3:[0.7972,0.1498,0.053]},{p:-3.49,r1:[0.7884,0.1544,0.0572],r2:[0.7775,0.1949,0.0276],r3:[0.7979,0.1498,0.0523]},{p:6.51,r1:[0.7888,0.154,0.0572],r2:[0.7773,0.1948,0.0278],r3:[0.798,0.1496,0.0525]},{p:16.51,r1:[0.7879,0.1544,0.0577],r2:[0.7754,0.1955,0.0291],r3:[0.7964,0.15,0.0536]},{p:26.51,r1:[0.788,0.1542,0.0578],r2:[0.7734,0.1956,0.031],r3:[0.7945,0.1499,0.0556]},{p:36.51,r1:[0.7884,0.1536,0.058],r2:[0.7711,0.1956,0.0333],r3:[0.7921,0.15,0.0579]},{p:46.51,r1:[0.7891,0.1528,0.0581],r2:[0.7688,0.1954,0.0358],r3:[0.7897,0.1499,0.0604]},{p:56.51,r1:[0.7892,0.1524,0.0584],r2:[0.7671,0.1947,0.0382],r3:[0.7872,0.1497,0.0631]},{p:66.51,r1:[0.7898,0.1518,0.0584],r2:[0.7662,0.1933,0.0405],r3:[0.7866,0.1483,0.0651]},{p:76.51,r1:[0.7893,0.1517,0.0589],r2:[0.7661,0.1914,0.0424],r3:[0.7852,0.1475,0.0673]},{p:86.51,r1:[0.7899,0.1513,0.0588],r2:[0.7664,0.1901,0.0436],r3:[0.7862,0.146,0.0678]},{p:96.51,r1:[0.7895,0.1515,0.059],r2:[0.7683,0.1889,0.0428],r3:[0.7868,0.1461,0.0671]},{p:106.51,r1:[0.7895,0.1518,0.0587],r2:[0.7696,0.1893,0.041],r3:[0.789,0.1461,0.0649]},{p:116.51,r1:[0.7894,0.1521,0.0585],r2:[0.7715,0.1896,0.0388],r3:[0.7906,0.1467,0.0627]},{p:126.51,r1:[0.7891,0.1526,0.0583],r2:[0.7723,0.1908,0.0368],r3:[0.7915,0.1477,0.0607]},{p:136.51,r1:[0.7888,0.1531,0.058],r2:[0.7719,0.193,0.035],r3:[0.7918,0.1491,0.0591]},{p:146.51,r1:[0.789,0.1533,0.0577],r2:[0.7717,0.1949,0.0334],r3:[0.7907,0.1512,0.0581]},{p:156.51,r1:[0.7891,0.1535,0.0574],r2:[0.7702,0.1978,0.0321],r3:[0.7889,0.1536,0.0575]},{p:166.51,r1:[0.7891,0.1537,0.0572],r2:[0.7683,0.2004,0.0313],r3:[0.787,0.1558,0.0572]},{p:176.51,r1:[0.789,0.1538,0.0572],r2:[0.767,0.202,0.0309],r3:[0.7859,0.1569,0.0572]}]
+  };
+
+  // LDM-family descriptors (4-anchor data per stationary point, per ring, per method)
+  // Order in each row: [Frob Full, RMSD mat, CT %, Q Frob, Q RMSD, S_hom]
+  // (HOMA is handled separately via 36-point data)
+  const LDM = {
+    '6-31G': {
+      opt_1:   { ring1:[0.833,0.167,-5.474,0.241,0.054,0.529], ring2:[0.833,0.167,-5.475,0.241,0.054,0.529], ring3:[0.877,0.175,-6.414,0.212,0.047,0.524] },
+      opt_TS1: { ring1:[0.830,0.166,-5.423,0.243,0.054,0.530], ring2:[0.838,0.168,-5.241,0.256,0.057,0.533], ring3:[0.881,0.176,-6.187,0.227,0.051,0.525] },
+      opt_2:   { ring1:[0.828,0.166,-5.445,0.239,0.053,0.531], ring2:[0.832,0.166,-5.459,0.241,0.054,0.529], ring3:[0.874,0.175,-6.395,0.210,0.047,0.525] },
+      opt_TS2: { ring1:[0.827,0.165,-5.438,0.241,0.054,0.529], ring2:[0.835,0.167,-5.494,0.234,0.052,0.531], ring3:[0.876,0.175,-6.449,0.207,0.046,0.525] }
+    },
+    '6-31G(d)': {
+      opt_1:   { ring1:[0.827,0.165,-5.351,0.210,0.047,0.539], ring2:[0.827,0.165,-5.351,0.210,0.047,0.539], ring3:[0.881,0.176,-6.299,0.185,0.041,0.532] },
+      opt_TS1: { ring1:[0.825,0.165,-5.322,0.211,0.047,0.539], ring2:[0.828,0.166,-5.133,0.221,0.049,0.543], ring3:[0.880,0.176,-6.089,0.196,0.044,0.535] },
+      opt_2:   { ring1:[0.827,0.165,-5.348,0.210,0.047,0.539], ring2:[0.827,0.165,-5.354,0.208,0.047,0.540], ring3:[0.880,0.176,-6.281,0.184,0.041,0.533] },
+      opt_TS2: { ring1:[0.825,0.165,-5.376,0.205,0.046,0.539], ring2:[0.826,0.165,-5.354,0.210,0.047,0.539], ring3:[0.883,0.177,-6.329,0.181,0.041,0.532] }
+    },
+    '6-311+G(d,p)': {
+      opt_1:   { ring1:[0.855,0.171,-5.622,0.201,0.045,0.538], ring2:[0.855,0.171,-5.623,0.201,0.045,0.538], ring3:[0.906,0.181,-6.481,0.180,0.040,0.531] },
+      opt_TS1: { ring1:[0.855,0.171,-5.592,0.202,0.045,0.538], ring2:[0.855,0.171,-5.418,0.211,0.047,0.542], ring3:[0.908,0.182,-6.300,0.190,0.042,0.534] },
+      opt_2:   { ring1:[0.854,0.171,-5.601,0.200,0.045,0.538], ring2:[0.856,0.171,-5.622,0.201,0.045,0.538], ring3:[0.907,0.181,-6.470,0.180,0.040,0.531] },
+      opt_TS2: { ring1:[0.855,0.171,-5.627,0.201,0.045,0.537], ring2:[0.855,0.171,-5.651,0.196,0.044,0.538], ring3:[0.907,0.181,-6.517,0.176,0.039,0.531] }
+    }
+  };
+
+  // ============= METADATA =============
+  const methodMeta = {
+    '6-31G':        { color:'#534AB7', dark:'#AFA9EC', shape:'circle'   },
+    '6-31G(d)':     { color:'#0F6E56', dark:'#5DCAA5', shape:'triangle' },
+    '6-311+G(d,p)': { color:'#993C1D', dark:'#F0997B', shape:'rect'     }
+  };
+  const methodOrder = ['6-31G', '6-31G(d)', '6-311+G(d,p)'];
+  const refAngles = { opt_1:176.51, opt_TS1:86.51, opt_2:26.51, opt_TS2:-3.49 };
+  const ptRoles = { opt_1:'Global minimum', opt_TS1:'Main rotation barrier', opt_2:'Meta-stable minimum', opt_TS2:'Local max (≈ 0°)' };
+
+  // Ring styles for LDM mode (line style by ring; color = method)
+  const ringStyles_LDM = {
+    r1: { label:'Ring 1', dash:[],     marker:'circle'   },
+    r2: { label:'Ring 2', dash:[6,4],  marker:'triangle' },
+    r3: { label:'Ring 3', dash:[2,3],  marker:'rect'     }
+  };
+  // Ring colors for HOMA mode (color by ring; consistent both modes)
+  const ringColors_HOMA = {
+    r1: { light:'#185FA5', dark:'#85B7EB' },
+    r2: { light:'#BA7517', dark:'#FAC775' },
+    r3: { light:'#993556', dark:'#ED93B1' }
+  };
+  // HOMA components: idx in HOMA36 entry array, line dash style
+  // EN  = défaut de position moyenne (mean bond-length deviation from R_opt)
+  // GEO = défaut d'égalisation des liaisons (bond-length alternation)
+  const compMeta = {
+    H: { label:'HOMA', long:'HOMA',                                idx:0, dash:[],    width:2.0 },
+    E: { label:'EN',   long:'EN — mean bond-length deviation',     idx:1, dash:[6,4], width:1.5 },
+    G: { label:'GEO',  long:'GEO — bond-length alternation',       idx:2, dash:[2,3], width:1.5 }
+  };
+
+  // LDM descriptor catalogue (4-anchor mode)
+  const ldmDescs = [
+    { id:'FROB',  group:'LDM',   sub:'Frob Full', idx:0 },
+    { id:'RMSDM', group:'LDM',   sub:'RMSD mat',  idx:1 },
+    { id:'CT',    group:'LDM',   sub:'CT %',      idx:2 },
+    { id:'QFROB', group:'LDM/R', sub:'Q Frob',    idx:3 },
+    { id:'QRMSD', group:'LDM/R', sub:'Q RMSD',    idx:4 },
+    { id:'SHOM',  group:'LDM·R', sub:'S_hom',     idx:5 }
+  ];
+
+  // =================== STATE ===================
+  const state = {
+    methods: { '6-31G':false, '6-31G(d)':false, '6-311+G(d,p)':true }, // default
+    activeDesc: null,    // either 'HOMA' or one of ldmDescs.id, or null
+    homa: { H:true, E:false, G:false, r1:true, r2:true, r3:true }, // HOMA submenu state
+    activeStation: null
+  };
+
+  // PES key points lookup
+  const keyPoints = {};
+  methodOrder.forEach(function(m){
+    keyPoints[m] = {};
+    Object.entries(refAngles).forEach(function(entry){
+      const name = entry[0], target = entry[1];
+      const pt = PES[m].reduce(function(best,p){
+        return Math.abs(p[0]-target) < Math.abs(best[0]-target) ? p : best;
+      });
+      keyPoints[m][name] = { d: pt[0], E: pt[1] };
+    });
+  });
+
+  // =================== THEME ===================
+  const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const axisColor = isDark ? 'rgba(230,230,225,0.75)' : 'rgba(60,60,55,0.85)';
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const annoText  = isDark ? '#EEEDFE' : '#26215C';
+  function mColor(m) { return isDark ? methodMeta[m].dark : methodMeta[m].color; }
+  function rColor(r) { return isDark ? ringColors_HOMA[r].dark : ringColors_HOMA[r].light; }
+
+  // =================== HELPERS ===================
+  function hexToRgba(hex, a) {
+    const h = hex.replace('#','');
+    return 'rgba('+parseInt(h.substring(0,2),16)+','+parseInt(h.substring(2,4),16)+','+parseInt(h.substring(4,6),16)+','+a+')';
+  }
+  function ldmAnchorsForRing(method, descIdx, ringKey) {
+    const d = LDM[method];
+    const v1   = d.opt_1[ringKey][descIdx];
+    const vTS1 = d.opt_TS1[ringKey][descIdx];
+    const v2   = d.opt_2[ringKey][descIdx];
+    const vTS2 = d.opt_TS2[ringKey][descIdx];
+    const phi1 = refAngles.opt_1, phiTS1 = refAngles.opt_TS1, phi2 = refAngles.opt_2, phiTS2 = refAngles.opt_TS2;
+    return [
+      { x:-phi1,   y:v1,   real:false },
+      { x:-phiTS1, y:vTS1, real:false },
+      { x:-phi2,   y:v2,   real:false },
+      { x: phiTS2, y:vTS2, real:true  },
+      { x: phi2,   y:v2,   real:true  },
+      { x: phiTS1, y:vTS1, real:true  },
+      { x: phi1,   y:v1,   real:true  }
+    ];
+  }
+  function smoothInterp(anchors, nSamples, xMin, xMax) {
+    nSamples = nSamples || 120; xMin = xMin == null ? -180 : xMin; xMax = xMax == null ? 180 : xMax;
+    const a = anchors.slice().sort(function(p,q){ return p.x - q.x; });
+    const out = [];
+    for (let s = 0; s <= nSamples; s++) {
+      const t = s / nSamples, x = xMin + (xMax - xMin) * t;
+      if (x <= a[0].x) {
+        const slope = (a[1].y - a[0].y) / (a[1].x - a[0].x);
+        out.push({ x:x, y:a[0].y + slope*(x - a[0].x) }); continue;
+      }
+      if (x >= a[a.length-1].x) {
+        const n = a.length, slope2 = (a[n-1].y - a[n-2].y) / (a[n-1].x - a[n-2].x);
+        out.push({ x:x, y:a[n-1].y + slope2*(x - a[n-1].x) }); continue;
+      }
+      let i = 0; while (i < a.length-1 && a[i+1].x <= x) i++;
+      const p0 = a[Math.max(0,i-1)], p1 = a[i], p2 = a[i+1], p3 = a[Math.min(a.length-1,i+2)];
+      const tt = (x - p1.x) / (p2.x - p1.x), tt2 = tt*tt, tt3 = tt2*tt;
+      const y = 0.5 * (2*p1.y + (-p0.y + p2.y)*tt + (2*p0.y - 5*p1.y + 4*p2.y - p3.y)*tt2 + (-p0.y + 3*p1.y - 3*p2.y + p3.y)*tt3);
+      out.push({ x:x, y:y });
+    }
+    return out;
+  }
+  function homaAt(method, targetPhi) {
+    return HOMA36[method].reduce(function(best,p){
+      return Math.abs(p.p-targetPhi) < Math.abs(best.p-targetPhi) ? p : best;
+    });
+  }
+
+  // =================== UI: method chips ===================
+  function buildChip(host, key, label, color, checked, onChange) {
+    const chip = document.createElement('label');
+    chip.className = 'chip' + (checked ? '' : ' dim');
+    chip.style.borderColor = checked ? color : 'var(--border-tertiary)';
+    if (checked) chip.style.color = color;
+    chip.innerHTML =
+      '<input type="checkbox"' + (checked ? ' checked' : '') + '>' +
+      (color ? '<span class="chip-swatch" style="background:'+color+';"></span>' : '') +
+      '<span>'+label+'</span>';
+    chip.querySelector('input').addEventListener('change', function(e){
+      const v = e.target.checked;
+      chip.classList.toggle('dim', !v);
+      chip.style.borderColor = v ? color : 'var(--border-tertiary)';
+      chip.style.color = v ? color : 'var(--text-tertiary)';
+      onChange(v);
+      refresh();
+    });
+    host.appendChild(chip);
+  }
+
+  const methodChipsHost = document.getElementById('methodChips');
+  methodOrder.forEach(function(m){
+    buildChip(methodChipsHost, m, m, mColor(m), state.methods[m], function(v){ state.methods[m] = v; });
+  });
+
+  // =================== UI: descriptor buttons ===================
+  const descBar = document.getElementById('descBar');
+  let barHTML = '';
+  // First: HOMA button (special — 36-pt)
+  barHTML += '<button class="descBtn" data-desc="HOMA">HOMA</button>';
+  // Then: LDM groups
+  let lastGroup = null;
+  ldmDescs.forEach(function(d, i){
+    if (d.group !== lastGroup) {
+      barHTML += '<span style="width:0.5px;height:18px;background:var(--border-tertiary);margin:0 4px;"></span>';
+      barHTML += '<span class="descGroupLabel">'+d.group+'</span>';
+      lastGroup = d.group;
+    }
+    barHTML += '<button class="descBtn" data-desc="'+d.id+'">'+d.sub+'</button>';
+  });
+  descBar.innerHTML = barHTML;
+
+  Array.prototype.forEach.call(descBar.querySelectorAll('.descBtn'), function(btn){
+    btn.addEventListener('click', function(){
+      const id = btn.dataset.desc;
+      const wasActive = btn.classList.contains('active');
+      Array.prototype.forEach.call(descBar.querySelectorAll('.descBtn'), function(b){ b.classList.remove('active'); });
+      if (wasActive) {
+        state.activeDesc = null;
+      } else {
+        btn.classList.add('active');
+        state.activeDesc = id;
+      }
+      // Show/hide HOMA sub-row
+      document.getElementById('subRow').classList.toggle('visible', state.activeDesc === 'HOMA');
+      refresh();
+    });
+  });
+
+  // =================== UI: HOMA sub-buttons ===================
+  Array.prototype.forEach.call(document.querySelectorAll('#subRow .subBtn'), function(btn){
+    btn.addEventListener('click', function(){
+      if (btn.dataset.comp) {
+        const c = btn.dataset.comp;
+        state.homa[c] = !state.homa[c];
+        btn.classList.toggle('active', state.homa[c]);
+      } else if (btn.dataset.ring) {
+        const r = btn.dataset.ring;
+        state.homa[r] = !state.homa[r];
+        btn.classList.toggle('active', state.homa[r]);
+      }
+      refresh();
+    });
+  });
+
+  // =================== CHART BUILDING ===================
+  let chart;
+  function buildDatasets() {
+    const ds = [];
+    const activeMethods = methodOrder.filter(function(m){ return state.methods[m]; });
+
+    // 1) PES line + stationary scatter per method
+    activeMethods.forEach(function(m){
+      const c = mColor(m);
+      ds.push({
+        label:'PES '+m,
+        data: PES[m].map(function(p){ return {x:p[0], y:p[1]}; }),
+        parsing:false, borderColor:c, backgroundColor:c,
+        borderWidth:1.8, pointRadius:1.6, pointHoverRadius:3.5, tension:0.32,
+        yAxisID:'y', order:20, _kind:'pes', _method:m
+      });
+      const statData = Object.entries(keyPoints[m]).map(function(entry){
+        return { x: entry[1].d, y: entry[1].E, name: entry[0], method: m };
+      });
+      ds.push({
+        label:'Stationary '+m,
+        type:'scatter', data:statData, parsing:false,
+        pointRadius:6.5, pointHoverRadius:8, pointBorderWidth:2,
+        pointStyle: methodMeta[m].shape,
+        pointBackgroundColor: function(ctx){ if (!ctx.raw) return c; const nm = ctx.raw.name; return (nm==='opt_1'||nm==='opt_2') ? '#1D9E75' : '#D85A30'; },
+        pointBorderColor: function(ctx){ if (!ctx.raw) return c; const nm = ctx.raw.name; return (nm==='opt_1'||nm==='opt_2') ? '#0F6E56' : '#993C1D'; },
+        showLine:false, yAxisID:'y', order:18, _kind:'stat', _method:m
+      });
+    });
+
+    // 2) Descriptor overlays
+    if (state.activeDesc === 'HOMA') {
+      // HOMA mode: 36-point real data, color = ring, line style = component, marker = method
+      const activeComps = Object.keys(compMeta).filter(function(c){ return state.homa[c]; });
+      const activeRings = ['r1','r2','r3'].filter(function(r){ return state.homa[r]; });
+      activeMethods.forEach(function(m){
+        const ms = methodMeta[m].shape;
+        activeRings.forEach(function(r){
+          const rc = rColor(r);
+          activeComps.forEach(function(comp){
+            const cm = compMeta[comp];
+            const data = HOMA36[m].map(function(p){ return { x:p.p, y:p[r][cm.idx] }; });
+            ds.push({
+              label: m + ' · ' + ringStyles_LDM[r].label + ' · ' + cm.label,
+              data: data, parsing:false,
+              borderColor: rc, backgroundColor: rc,
+              borderWidth: cm.width, borderDash: cm.dash,
+              pointRadius: 2.0, pointHoverRadius: 4.5, pointStyle: ms, pointBorderWidth: 1.0,
+              tension: 0.25,
+              yAxisID:'yR', order:10,
+              _kind:'homa', _method:m, _ring:r, _comp:comp
+            });
+          });
+        });
+      });
+    } else if (state.activeDesc !== null) {
+      // LDM mode: 4-anchor interpolation, color = method, line style = ring
+      const desc = ldmDescs.find(function(d){ return d.id === state.activeDesc; });
+      activeMethods.forEach(function(m){
+        const c = mColor(m);
+        ['r1','r2','r3'].forEach(function(r){
+          const rs = ringStyles_LDM[r];
+          const anchors = ldmAnchorsForRing(m, desc.idx, 'ring'+r.charAt(1));
+          const interp = smoothInterp(anchors, 120, -180, 180);
+          ds.push({
+            label: m + ' · ' + rs.label + ' (interp.)',
+            data: interp, parsing:false,
+            borderColor: c, backgroundColor: c,
+            borderWidth: 1.5, borderDash: rs.dash, pointRadius: 0, tension: 0,
+            yAxisID:'yR', order:10, _kind:'ldmLine', _method:m, _ring:r
+          });
+          const real = anchors.filter(function(a){ return a.real; });
+          const mirr = anchors.filter(function(a){ return !a.real; });
+          ds.push({
+            label: m + ' · ' + rs.label + ' (data)',
+            type:'scatter', data:real, parsing:false,
+            backgroundColor:c, borderColor:c,
+            pointRadius:4, pointHoverRadius:6, pointStyle:rs.marker,
+            yAxisID:'yR', order:5, _kind:'ldmPt', _method:m, _ring:r
+          });
+          ds.push({
+            label: m + ' · ' + rs.label + ' (mirror)',
+            type:'scatter', data:mirr, parsing:false,
+            backgroundColor:'transparent', borderColor:hexToRgba(c,0.6), pointBorderWidth:1.3,
+            pointRadius:3.6, pointHoverRadius:5, pointStyle:rs.marker,
+            yAxisID:'yR', order:5, _kind:'ldmMirror', _method:m, _ring:r
+          });
+        });
+      });
+    }
+
+    return ds;
+  }
+
+  function computeYRRange() {
+    const activeMethods = methodOrder.filter(function(m){ return state.methods[m]; });
+    if (!activeMethods.length || !state.activeDesc) return { min:null, max:null };
+    const all = [];
+    if (state.activeDesc === 'HOMA') {
+      const activeComps = Object.keys(compMeta).filter(function(c){ return state.homa[c]; });
+      const activeRings = ['r1','r2','r3'].filter(function(r){ return state.homa[r]; });
+      activeMethods.forEach(function(m){
+        HOMA36[m].forEach(function(p){
+          activeRings.forEach(function(r){
+            activeComps.forEach(function(comp){ all.push(p[r][compMeta[comp].idx]); });
+          });
+        });
+      });
+    } else {
+      const desc = ldmDescs.find(function(d){ return d.id === state.activeDesc; });
+      activeMethods.forEach(function(m){
+        ['ring1','ring2','ring3'].forEach(function(rk){
+          ['opt_1','opt_TS1','opt_2','opt_TS2'].forEach(function(sp){
+            all.push(LDM[m][sp][rk][desc.idx]);
+          });
+        });
+      });
+    }
+    if (!all.length) return { min:null, max:null };
+    const mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
+    const pad = Math.max(0.02, (mx - mn) * 0.2);
+    return { min: mn - pad, max: mx + pad };
+  }
+
+  function descTitle() {
+    if (!state.activeDesc) return '';
+    if (state.activeDesc === 'HOMA') {
+      const comps = Object.keys(compMeta).filter(function(c){ return state.homa[c]; }).map(function(c){ return compMeta[c].label; });
+      return 'HOMA components: ' + comps.join(' / ');
+    }
+    const d = ldmDescs.find(function(x){ return x.id === state.activeDesc; });
+    return d.group + ' — ' + d.sub;
+  }
+
+  function rebuildChart() {
+    if (chart) chart.destroy();
+    const datasets = buildDatasets();
+    const yR = computeYRRange();
+    const hasDesc = state.activeDesc !== null && yR.min !== null;
+
+    chart = new Chart(document.getElementById('pesChart').getContext('2d'), {
+      type:'line',
+      data:{ datasets:datasets },
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:{duration:200},
+        interaction:{ mode:'nearest', intersect:true },
+        onClick:function(evt, els){
+          if (!els || !els.length) return;
+          for (let i = 0; i < els.length; i++) {
+            const el = els[i], ds = chart.data.datasets[el.datasetIndex];
+            if (ds._kind === 'stat') {
+              state.activeStation = ds.data[el.index].name;
+              renderInfo();
+              return;
+            }
+          }
+        },
+        onHover:function(evt, els){
+          const pointable = els && els.some(function(e){ return chart.data.datasets[e.datasetIndex]._kind === 'stat'; });
+          evt.native.target.style.cursor = pointable ? 'pointer' : 'default';
+        },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            callbacks:{
+              title:function(items){
+                const it = items[0], ds = chart.data.datasets[it.datasetIndex];
+                if (ds._kind === 'stat') return ds.data[it.dataIndex].name + ' · ' + ds._method;
+                return 'φ = ' + it.parsed.x.toFixed(1) + '°';
+              },
+              label:function(it){
+                const ds = chart.data.datasets[it.datasetIndex];
+                if (ds._kind === 'pes') return ds._method + ': ΔE = ' + it.parsed.y.toFixed(3) + ' kcal/mol';
+                if (ds._kind === 'stat') {
+                  const p = ds.data[it.dataIndex];
+                  return ['φ = ' + p.x.toFixed(2) + '°', 'ΔE = ' + p.y.toFixed(3) + ' kcal/mol', ptRoles[p.name]];
+                }
+                if (ds._kind === 'homa') {
+                  return ds._method + ' · ' + ringStyles_LDM[ds._ring].label + ' · ' + compMeta[ds._comp].long + ': ' + it.parsed.y.toFixed(3);
+                }
+                // ldmLine, ldmPt, ldmMirror
+                const suffix = ds._kind === 'ldmMirror' ? ' (mirrored)' : '';
+                return ds._method + ' · ' + ringStyles_LDM[ds._ring].label + ': ' + it.parsed.y.toFixed(3) + suffix;
+              }
+            }
+          }
+        },
+        scales:{
+          x:{
+            type:'linear', min:-180, max:180,
+            title:{ display:true, text:'Dihedral angle φ  D(12,6,7,11)  (°)', color:axisColor, font:{size:13} },
+            ticks:{ color:axisColor, stepSize:60, callback:function(v){ return v + '°'; } },
+            grid:{ color:gridColor }
+          },
+          y:{
+            position:'left',
+            title:{ display:true, text:'ΔE (kcal mol⁻¹)', color:axisColor, font:{size:13} },
+            ticks:{ color:axisColor }, grid:{ color:gridColor },
+            suggestedMin:-0.2, suggestedMax:4.2
+          },
+          yR:{
+            position:'right',
+            display: hasDesc,
+            title:{ display:hasDesc, text:descTitle(), color:axisColor, font:{size:13} },
+            ticks:{ color:axisColor },
+            grid:{ drawOnChartArea:false },
+            suggestedMin: yR.min, suggestedMax: yR.max
+          }
+        }
+      },
+      plugins:[{
+        id:'pointLabels',
+        afterDatasetsDraw:function(chart){
+          const c = chart.ctx;
+          c.save(); c.textAlign='center';
+          const firstStat = chart.data.datasets.find(function(ds){ return ds._kind === 'stat'; });
+          if (!firstStat) { c.restore(); return; }
+          const idx = chart.data.datasets.indexOf(firstStat);
+          const meta = chart.getDatasetMeta(idx);
+          if (!meta || !meta.data) { c.restore(); return; }
+          meta.data.forEach(function(el, i){
+            const pt = firstStat.data[i];
+            c.font = '500 11.5px sans-serif'; c.fillStyle = annoText;
+            c.fillText(pt.name, el.x, el.y - 14);
+          });
+          c.restore();
+        }
+      }]
+    });
+    buildLegend();
+  }
+
+  function buildLegend() {
+    const legEl = document.getElementById('chartLegend');
+    const parts = [];
+    parts.push('<span style="font-weight:500;color:var(--text-primary);">PES (left):</span>');
+    methodOrder.forEach(function(m){
+      if (!state.methods[m]) return;
+      const c = mColor(m);
+      parts.push('<span style="display:flex;align-items:center;gap:5px;"><span style="width:18px;height:2px;background:'+c+';"></span>'+m+'</span>');
+    });
+    parts.push('<span style="display:flex;align-items:center;gap:5px;color:var(--text-secondary);"><span style="width:9px;height:9px;border-radius:50%;background:#1D9E75;"></span>min</span>');
+    parts.push('<span style="display:flex;align-items:center;gap:5px;color:var(--text-secondary);"><span style="width:9px;height:9px;border-radius:50%;background:#D85A30;"></span>TS</span>');
+
+    if (state.activeDesc === 'HOMA') {
+      const activeComps = Object.keys(compMeta).filter(function(c){ return state.homa[c]; });
+      const activeRings = ['r1','r2','r3'].filter(function(r){ return state.homa[r]; });
+      if (activeComps.length && activeRings.length) {
+        parts.push('<span style="width:0.5px;height:14px;background:var(--border-tertiary);"></span>');
+        parts.push('<span style="font-weight:500;color:var(--text-primary);">HOMA (right):</span>');
+        activeRings.forEach(function(r){
+          parts.push('<span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:3px;border-radius:1px;background:'+rColor(r)+';"></span>'+ringStyles_LDM[r].label+'</span>');
+        });
+        activeComps.forEach(function(c){
+          const cm = compMeta[c];
+          const svg = cm.dash.length
+            ? '<svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="'+axisColor+'" stroke-width="1.6" stroke-dasharray="'+cm.dash.join(',')+'"/></svg>'
+            : '<span style="width:22px;height:2px;background:'+axisColor+';display:inline-block;"></span>';
+          parts.push('<span style="display:flex;align-items:center;gap:5px;">'+svg+cm.label+'</span>');
+        });
+      }
+    } else if (state.activeDesc !== null) {
+      const d = ldmDescs.find(function(x){ return x.id === state.activeDesc; });
+      parts.push('<span style="width:0.5px;height:14px;background:var(--border-tertiary);"></span>');
+      parts.push('<span style="font-weight:500;color:var(--text-primary);">'+d.group+' — '+d.sub+' (right):</span>');
+      ['r1','r2','r3'].forEach(function(r){
+        const rs = ringStyles_LDM[r];
+        const svg = rs.dash.length
+          ? '<svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="'+axisColor+'" stroke-width="1.6" stroke-dasharray="'+rs.dash.join(',')+'"/></svg>'
+          : '<span style="width:22px;height:2px;background:'+axisColor+';display:inline-block;"></span>';
+        parts.push('<span style="display:flex;align-items:center;gap:5px;">'+svg+rs.label+'</span>');
+      });
+      parts.push('<span style="color:var(--text-tertiary);font-size:10.5px;">● data &nbsp; ○ mirrored</span>');
+    }
+    legEl.innerHTML = parts.join(' ');
+  }
+
+  function refresh() {
+    rebuildChart();
+    if (state.activeStation) renderInfo();
+  }
+
+  // =================== INFO PANEL ===================
+  function renderInfo() {
+    if (!state.activeStation) {
+      document.getElementById('infoContent').style.display = 'none';
+      document.getElementById('infoEmpty').style.display = 'block';
+      return;
+    }
+    document.getElementById('infoEmpty').style.display = 'none';
+    const ic = document.getElementById('infoContent');
+    ic.style.display = 'block';
+
+    const name = state.activeStation;
+    const activeMethods = methodOrder.filter(function(m){ return state.methods[m]; });
+    if (!activeMethods.length) {
+      ic.innerHTML = '<p style="color:var(--text-secondary);font-size:12.5px;">No method selected.</p>';
+      return;
+    }
+
+    let tabsHTML = '<div class="method-tabs">';
+    activeMethods.forEach(function(m, idx){
+      tabsHTML += '<button class="method-tab'+(idx===0?' active':'')+'" data-method="'+m+'" style="color:'+mColor(m)+';">'+m+'</button>';
+    });
+    tabsHTML += '</div>';
+
+    function tableFor(method) {
+      const kp = keyPoints[method][name];
+      const h = homaAt(method, kp.d);
+      const rings = ['r1','r2','r3'];
+      const ldmRow = LDM[method][name];
+
+      // HOMA components rows
+      const homaRows = rings.map(function(r){
+        const v = h[r];
+        return '<tr>' +
+          '<td style="padding:3px 5px;font-size:11.5px;color:var(--text-secondary);">'+ringStyles_LDM[r].label+'</td>' +
+          '<td style="padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">'+v[0].toFixed(3)+'</td>' +
+          '<td style="padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">'+v[1].toFixed(3)+'</td>' +
+          '<td style="padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">'+v[2].toFixed(3)+'</td>' +
+          '</tr>';
+      }).join('');
+
+      // LDM rows: 6 LDM descriptors × 3 rings, transposed: descriptor as row, rings as columns
+      const ldmRows = ldmDescs.map(function(d, i){
+        const r1 = ldmRow.ring1[d.idx], r2 = ldmRow.ring2[d.idx], r3 = ldmRow.ring3[d.idx];
+        const fmt = function(v){ return Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(3); };
+        const isActive = state.activeDesc === d.id;
+        return '<tr style="' + (isActive ? 'background:var(--bg-info);' : '') + '">' +
+          '<td style="padding:3px 5px;font-size:11.5px;">' +
+            '<span style="color:var(--text-tertiary);font-size:10px;margin-right:3px;">'+d.group+'</span>' +
+            '<span style="color:'+(isActive?'var(--text-info)':'var(--text-secondary)')+';font-weight:'+(isActive?'500':'400')+';">'+d.sub+'</span></td>' +
+          '<td style="padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">'+fmt(r1)+'</td>' +
+          '<td style="padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">'+fmt(r2)+'</td>' +
+          '<td style="padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">'+fmt(r3)+'</td>' +
+        '</tr>';
+      }).join('');
+
+      const isMin = (name === 'opt_1' || name === 'opt_2');
+      const fill = isMin ? '#1D9E75' : '#D85A30';
+      const border = isMin ? '#0F6E56' : '#993C1D';
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'+
+        '<span style="width:11px;height:11px;border-radius:50%;background:'+fill+';border:2px solid '+border+';"></span>'+
+        '<span style="font-weight:500;font-size:14px;">'+name+'</span>'+
+        '<span style="color:var(--text-tertiary);font-size:11.5px;">· '+method+'</span></div>'+
+      '<p style="margin:0 0 8px;font-size:11.5px;color:var(--text-secondary);">'+ptRoles[name]+'</p>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">'+
+        '<div style="background:var(--bg-primary);border-radius:var(--radius-md);padding:6px 8px;"><div style="font-size:10.5px;color:var(--text-secondary);">φ</div><div style="font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;">'+kp.d.toFixed(2)+'°</div></div>'+
+        '<div style="background:var(--bg-primary);border-radius:var(--radius-md);padding:6px 8px;"><div style="font-size:10.5px;color:var(--text-secondary);">ΔE</div><div style="font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;">'+kp.E.toFixed(3)+' kcal/mol</div></div>'+
+      '</div>'+
+      '<p style="margin:8px 0 4px;font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;">HOMA decomposition (Krygowski)</p>'+
+      '<table style="margin-bottom:4px;">'+
+        '<thead><tr style="border-bottom:0.5px solid var(--border-tertiary);">'+
+          '<th style="padding:3px 5px;text-align:left;font-size:10px;color:var(--text-secondary);font-weight:500;">Ring</th>'+
+          '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;" title="Harmonic Oscillator Model of Aromaticity">HOMA</th>'+
+          '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;" title="Défaut de position moyenne">EN</th>'+
+          '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;" title="Défaut d&apos;égalisation des liaisons">GEO</th>'+
+        '</tr></thead><tbody>'+homaRows+'</tbody></table>'+
+      '<p style="margin:0 0 10px;font-size:10px;color:var(--text-tertiary);line-height:1.5;">'+
+        '<strong style="color:var(--text-secondary);font-weight:500;">EN</strong> défaut de position moyenne · '+
+        '<strong style="color:var(--text-secondary);font-weight:500;">GEO</strong> défaut d&apos;égalisation</p>'+
+      '<p style="margin:8px 0 4px;font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;">LDM descriptors</p>'+
+      '<table>'+
+        '<thead><tr style="border-bottom:0.5px solid var(--border-tertiary);">'+
+          '<th style="padding:3px 5px;text-align:left;font-size:10px;color:var(--text-secondary);font-weight:500;">Descriptor</th>'+
+          '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;">R 1</th>'+
+          '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;">R 2</th>'+
+          '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;">R 3</th>'+
+        '</tr></thead><tbody>'+ldmRows+'</tbody></table>';
+    }
+
+    ic.innerHTML = tabsHTML + '<div id="tabContent">'+tableFor(activeMethods[0])+'</div>' +
+      '<button onclick="window.__clearStation()" style="margin-top:10px;font-size:11.5px;">← Back</button>';
+    Array.prototype.forEach.call(ic.querySelectorAll('.method-tab'), function(tab){
+      tab.addEventListener('click', function(){
+        Array.prototype.forEach.call(ic.querySelectorAll('.method-tab'), function(t){ t.classList.remove('active'); });
+        tab.classList.add('active');
+        document.getElementById('tabContent').innerHTML = tableFor(tab.dataset.method);
+      });
+    });
+  }
+
+  window.__clearStation = function(){
+    state.activeStation = null;
+    renderInfo();
+  };
+
+  // =================== INIT ===================
+  rebuildChart();
+
+})();
+</script>
+</body>
+</html>
