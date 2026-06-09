@@ -792,11 +792,13 @@
     return label;
   }
 
-  // Rasterise un élément HTML (légende) avec injection des styles de la page → rendu fidèle au site.
-  function captureHtmlAsImage(el, width){
+  // Rasterise un élément HTML (légende) avec injection styles + tailles calibrées DPR.
+  function captureHtmlAsImage(el, width, dpr){
     if (!el) return Promise.resolve(null);
+    dpr = dpr || Math.max(1, window.devicePixelRatio || 1);
     var pageStyles = Array.from(document.querySelectorAll('style'))
       .map(function(s){ return s.textContent; }).join('\n');
+    var LEG = Math.round(13 * dpr), LEG_H = Math.round(12 * dpr);
     var forceLight =
       ':root{--bg:#FFFFFF;--surface:#FFFFFF;--text:#1A1A1A;--muted:#6B6B6B;--border:#E2E0DA;--accent:#534AB7;' +
         '--text-primary:#1A1A1A;--text-secondary:#6B6B6B;--text-tertiary:#9A9892;' +
@@ -804,12 +806,14 @@
       '@media (prefers-color-scheme: dark){:root{--bg:#FFFFFF;--surface:#FFFFFF;--text:#1A1A1A;--muted:#6B6B6B;--border:#E2E0DA;--accent:#534AB7;' +
         '--text-primary:#1A1A1A;--text-secondary:#6B6B6B;--text-tertiary:#9A9892;' +
         '--border-info:#E2E0DA;--border-tertiary:#E2E0DA;}}' +
-      'body,html{background:#FFFFFF;color:#1A1A1A;}';
-    var height = Math.max(80, el.scrollHeight + 16);
+      'body,html{background:#FFFFFF;color:#1A1A1A;}' +
+      '.chart-legend,#chartLegend{font-size:' + LEG + 'px !important;}' +
+      '.chart-legend *,#chartLegend *{font-size:' + LEG + 'px !important;}';
+    var height = Math.max(100 * dpr, Math.round(el.scrollHeight * dpr + 24 * dpr));
     var svgStr =
       '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '">' +
         '<foreignObject x="0" y="0" width="100%" height="100%">' +
-          '<div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff;padding:10px 12px;box-sizing:border-box;width:' + width + 'px;font-family:-apple-system,Segoe UI,Arial,sans-serif;">' +
+          '<div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff;padding:' + (10*dpr) + 'px ' + (12*dpr) + 'px;box-sizing:border-box;width:' + width + 'px;font-family:-apple-system,Segoe UI,Arial,sans-serif;">' +
             '<style>' + pageStyles + '\n' + forceLight + '</style>' +
             el.outerHTML +
           '</div>' +
@@ -825,6 +829,14 @@
   }
 
   async function downloadDiagram(){
+    var DPR = Math.max(1, window.devicePixelRatio || 1);
+    var F_TITLE = Math.round(24 * DPR);
+    var F_SUB   = Math.round(13 * DPR);
+    var margin = Math.round(28 * DPR);
+    var lineGap = Math.round(8 * DPR);
+    var titleH = F_TITLE + F_SUB * 2 + lineGap * 3 + Math.round(10 * DPR);
+    var legendGap = Math.round(12 * DPR);
+
     var dataUrl = (chart && typeof chart.toBase64Image === 'function')
       ? chart.toBase64Image('image/png', 1)
       : document.getElementById('pesChart').toDataURL('image/png');
@@ -835,11 +847,10 @@
     });
     var legendData = await captureHtmlAsImage(
       document.getElementById('chartLegend'),
-      chartImg.naturalWidth
+      chartImg.naturalWidth, DPR
     );
-
-    var margin = 24, titleH = 80, legendGap = 8;
     var legendH = legendData ? legendData.height : 0;
+
     var out = document.createElement('canvas');
     out.width  = chartImg.naturalWidth  + margin * 2;
     out.height = chartImg.naturalHeight + margin * 2 + titleH + (legendH ? legendH + legendGap : 0);
@@ -847,13 +858,17 @@
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, out.width, out.height);
     ctx.textBaseline = 'top';
+    var y = margin;
     ctx.fillStyle = '#1A1A1A';
-    ctx.font = 'bold 18px -apple-system, "Segoe UI", Arial, sans-serif';
-    ctx.fillText('Torsional PES — Trimer · LDM + HOMA components', margin, margin);
-    ctx.font = '13px -apple-system, "Segoe UI", Arial, sans-serif';
+    ctx.font = 'bold ' + F_TITLE + 'px -apple-system, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Torsional PES — Trimer · LDM + HOMA components', margin, y);
+    y += F_TITLE + lineGap;
+    ctx.font = F_SUB + 'px -apple-system, "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#6B6B6B';
-    ctx.fillText('Functional/basis : B3LYP/{6-31G, 6-31G(d), 6-311+G(d,p)} — relaxed scan D(12,6,7,11) — Gaussian 16', margin, margin + 26);
-    ctx.fillText('Config : ' + buildExportStateLabel(), margin, margin + 46);
+    ctx.fillText('Functional/basis : B3LYP/{6-31G, 6-31G(d), 6-311+G(d,p)} — relaxed scan D(12,6,7,11) — Gaussian 16', margin, y);
+    y += F_SUB + lineGap;
+    ctx.fillText('Config : ' + buildExportStateLabel(), margin, y);
+
     ctx.drawImage(chartImg, margin, margin + titleH);
     if (legendData) {
       ctx.drawImage(legendData.img, margin, margin + titleH + chartImg.naturalHeight + legendGap);
