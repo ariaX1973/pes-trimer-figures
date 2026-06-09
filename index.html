@@ -87,6 +87,10 @@
       <button class="subBtn active" data-ring="r2" style="color:#BA7517;">Ring 2</button>
       <button class="subBtn active" data-ring="r3" style="color:#993556;">Ring 3</button>
     </div>
+    <div class="toolbar-row">
+      <span class="toolbar-label">Export</span>
+      <button id="btn-download" class="subBtn" title="Télécharge le diagramme courant en PNG avec titre + méthode + état actif">⬇ Télécharger PNG</button>
+    </div>
   </div>
 
   <div class="grid">
@@ -614,6 +618,9 @@
   function buildLegend() {
     const legEl = document.getElementById('chartLegend');
     const parts = [];
+    parts.push('<span style="font-weight:500;color:var(--text-primary);">Functional :</span>');
+    parts.push('<span style="color:var(--text-primary);">B3LYP</span>');
+    parts.push('<span style="width:0.5px;height:14px;background:var(--border-tertiary);"></span>');
     parts.push('<span style="font-weight:500;color:var(--text-primary);">PES (left):</span>');
     methodOrder.forEach(function(m){
       if (!state.methods[m]) return;
@@ -765,6 +772,58 @@
     state.activeStation = null;
     renderInfo();
   };
+
+  // =================== DOWNLOAD PNG ===================
+  function buildExportStateLabel(){
+    const activeMethods = methodOrder.filter(function(m){ return state.methods[m]; });
+    var label = 'Methods : ' + (activeMethods.length ? activeMethods.join(' + ') : '—');
+    if (state.activeDesc === 'HOMA'){
+      const comps = ['H','E','G'].filter(function(c){ return state.homa[c]; })
+                                 .map(function(c){ return compMeta[c].label; });
+      const rings = ['r1','r2','r3'].filter(function(r){ return state.homa[r]; });
+      label += '  ·  HOMA components : ' + (comps.length ? comps.join(', ') : '—');
+      label += '  ·  Rings : ' + (rings.length ? rings.map(function(r){ return ringStyles_LDM[r].label; }).join(' + ') : '—');
+    } else if (state.activeDesc !== null){
+      const d = ldmDescs.find(function(x){ return x.id === state.activeDesc; });
+      if (d) label += '  ·  Descriptor : ' + d.group + ' — ' + d.sub;
+    } else {
+      label += '  ·  Descriptor : —';
+    }
+    return label;
+  }
+
+  function downloadDiagram(){
+    // `chart` is the local Chart.js instance (defined at line 387 of this IIFE)
+    var dataUrl = (chart && typeof chart.toBase64Image === 'function')
+      ? chart.toBase64Image('image/png', 1)
+      : document.getElementById('pesChart').toDataURL('image/png');
+    var img = new Image();
+    img.onload = function(){
+      var margin = 24, titleH = 80;
+      var out = document.createElement('canvas');
+      out.width  = img.naturalWidth  + margin * 2;
+      out.height = img.naturalHeight + margin * 2 + titleH;
+      var ctx = out.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = '#1A1A1A';
+      ctx.font = 'bold 18px -apple-system, "Segoe UI", Arial, sans-serif';
+      ctx.fillText('Torsional PES — Trimer · LDM + HOMA components', margin, margin);
+      ctx.font = '13px -apple-system, "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#6B6B6B';
+      ctx.fillText('Functional/basis : B3LYP/{6-31G, 6-31G(d), 6-311+G(d,p)} — relaxed scan D(12,6,7,11) — Gaussian 16', margin, margin + 26);
+      ctx.fillText('Config : ' + buildExportStateLabel(), margin, margin + 46);
+      ctx.drawImage(img, margin, margin + titleH);
+      var slug = 'pes-trimer_' + (state.activeDesc || 'PES') + '_' + new Date().toISOString().slice(0,10);
+      var link = document.createElement('a');
+      link.download = slug + '.png';
+      link.href = out.toDataURL('image/png');
+      link.click();
+    };
+    img.src = dataUrl;
+  }
+  document.getElementById('btn-download').addEventListener('click', downloadDiagram);
 
   // =================== INIT ===================
   rebuildChart();
