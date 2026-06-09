@@ -792,36 +792,69 @@
     return label;
   }
 
-  function downloadDiagram(){
-    // `chart` is the local Chart.js instance (defined at line 387 of this IIFE)
+  // Rasterise un élément HTML (légende) via SVG foreignObject pour l'inclure dans le PNG.
+  function captureHtmlAsImage(el, width){
+    if (!el) return Promise.resolve(null);
+    var cssVars =
+      '--bg:#FAFAF7;--surface:#FFFFFF;--text:#1A1A1A;--muted:#6B6B6B;--border:#E2E0DA;--accent:#534AB7;' +
+      '--text-primary:#1A1A1A;--text-secondary:#6B6B6B;--text-tertiary:#9A9892;' +
+      '--border-info:#E2E0DA;--border-tertiary:#E2E0DA;';
+    var wrap = cssVars +
+      'font-family:-apple-system,Segoe UI,Arial,sans-serif;background:#fff;color:#1A1A1A;font-size:12px;padding:6px 0;box-sizing:border-box;width:' + width + 'px;';
+    var height = Math.max(60, el.scrollHeight + 16);
+    var svgStr = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '">' +
+      '<foreignObject x="0" y="0" width="100%" height="100%">' +
+      '<div xmlns="http://www.w3.org/1999/xhtml" style="' + wrap + '">' + el.outerHTML + '</div>' +
+      '</foreignObject></svg>';
+    var url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+    return new Promise(function(resolve){
+      var img = new Image();
+      img.onload = function(){ resolve({img: img, height: height}); };
+      img.onerror = function(){ resolve(null); };
+      img.src = url;
+    });
+  }
+
+  async function downloadDiagram(){
     var dataUrl = (chart && typeof chart.toBase64Image === 'function')
       ? chart.toBase64Image('image/png', 1)
       : document.getElementById('pesChart').toDataURL('image/png');
-    var img = new Image();
-    img.onload = function(){
-      var margin = 24, titleH = 80;
-      var out = document.createElement('canvas');
-      out.width  = img.naturalWidth  + margin * 2;
-      out.height = img.naturalHeight + margin * 2 + titleH;
-      var ctx = out.getContext('2d');
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, out.width, out.height);
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = '#1A1A1A';
-      ctx.font = 'bold 18px -apple-system, "Segoe UI", Arial, sans-serif';
-      ctx.fillText('Torsional PES — Trimer · LDM + HOMA components', margin, margin);
-      ctx.font = '13px -apple-system, "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = '#6B6B6B';
-      ctx.fillText('Functional/basis : B3LYP/{6-31G, 6-31G(d), 6-311+G(d,p)} — relaxed scan D(12,6,7,11) — Gaussian 16', margin, margin + 26);
-      ctx.fillText('Config : ' + buildExportStateLabel(), margin, margin + 46);
-      ctx.drawImage(img, margin, margin + titleH);
-      var slug = 'pes-trimer_' + (state.activeDesc || 'PES') + '_' + new Date().toISOString().slice(0,10);
-      var link = document.createElement('a');
-      link.download = slug + '.png';
-      link.href = out.toDataURL('image/png');
-      link.click();
-    };
-    img.src = dataUrl;
+    var chartImg = await new Promise(function(r){
+      var i = new Image();
+      i.onload = function(){ r(i); };
+      i.src = dataUrl;
+    });
+    var legendData = await captureHtmlAsImage(
+      document.getElementById('chartLegend'),
+      chartImg.naturalWidth
+    );
+
+    var margin = 24, titleH = 80, legendGap = 8;
+    var legendH = legendData ? legendData.height : 0;
+    var out = document.createElement('canvas');
+    out.width  = chartImg.naturalWidth  + margin * 2;
+    out.height = chartImg.naturalHeight + margin * 2 + titleH + (legendH ? legendH + legendGap : 0);
+    var ctx = out.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#1A1A1A';
+    ctx.font = 'bold 18px -apple-system, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Torsional PES — Trimer · LDM + HOMA components', margin, margin);
+    ctx.font = '13px -apple-system, "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#6B6B6B';
+    ctx.fillText('Functional/basis : B3LYP/{6-31G, 6-31G(d), 6-311+G(d,p)} — relaxed scan D(12,6,7,11) — Gaussian 16', margin, margin + 26);
+    ctx.fillText('Config : ' + buildExportStateLabel(), margin, margin + 46);
+    ctx.drawImage(chartImg, margin, margin + titleH);
+    if (legendData) {
+      ctx.drawImage(legendData.img, margin, margin + titleH + chartImg.naturalHeight + legendGap);
+    }
+
+    var slug = 'pes-trimer_' + (state.activeDesc || 'PES') + '_' + new Date().toISOString().slice(0,10);
+    var link = document.createElement('a');
+    link.download = slug + '.png';
+    link.href = out.toDataURL('image/png');
+    link.click();
   }
   document.getElementById('btn-download').addEventListener('click', downloadDiagram);
 
