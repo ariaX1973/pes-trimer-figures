@@ -48,7 +48,7 @@
   @media (max-width:900px){.grid{grid-template-columns:1fr}}
   .chart-card{background:var(--bg-primary);border:0.5px solid var(--border-tertiary);border-radius:var(--radius-lg);padding:12px}
   .chart-wrap{position:relative;width:100%;height:440px}
-  .chart-legend{display:flex;gap:10px;justify-content:center;margin-top:8px;font-size:11px;color:var(--text-secondary);flex-wrap:wrap}
+  .chart-legend{display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:14px;color:var(--text-secondary);flex-wrap:wrap;line-height:1.5}
   .info-panel{background:var(--bg-secondary);border-radius:var(--radius-lg);padding:14px;min-height:440px}
   table{width:100%;border-collapse:collapse}
   .footer-note{margin-top:24px;padding-top:14px;border-top:0.5px solid var(--border-tertiary);font-size:11.5px;color:var(--text-secondary);line-height:1.6}
@@ -618,47 +618,47 @@
   function buildLegend() {
     const legEl = document.getElementById('chartLegend');
     const parts = [];
-    parts.push('<span style="font-weight:500;color:var(--text-primary);">Functional :</span>');
+    parts.push('<span style="font-weight:600;color:var(--text-primary);">Functional :</span>');
     parts.push('<span style="color:var(--text-primary);">B3LYP</span>');
-    parts.push('<span style="width:0.5px;height:14px;background:var(--border-tertiary);"></span>');
-    parts.push('<span style="font-weight:500;color:var(--text-primary);">PES (left):</span>');
+    parts.push('<span style="width:1px;height:20px;background:var(--border-tertiary);"></span>');
+    parts.push('<span style="font-weight:600;color:var(--text-primary);">PES (left):</span>');
     methodOrder.forEach(function(m){
       if (!state.methods[m]) return;
       const c = mColor(m);
-      parts.push('<span style="display:flex;align-items:center;gap:5px;"><span style="width:18px;height:2px;background:'+c+';"></span>'+m+'</span>');
+      parts.push('<span style="display:flex;align-items:center;gap:7px;"><span style="width:32px;height:4px;background:'+c+';border-radius:1px;"></span>'+m+'</span>');
     });
-    parts.push('<span style="display:flex;align-items:center;gap:5px;color:var(--text-secondary);"><span style="width:9px;height:9px;border-radius:50%;background:#1D9E75;"></span>min</span>');
-    parts.push('<span style="display:flex;align-items:center;gap:5px;color:var(--text-secondary);"><span style="width:9px;height:9px;border-radius:50%;background:#D85A30;"></span>TS</span>');
+    parts.push('<span style="display:flex;align-items:center;gap:6px;color:var(--text-secondary);"><span style="width:13px;height:13px;border-radius:50%;background:#1D9E75;"></span>min</span>');
+    parts.push('<span style="display:flex;align-items:center;gap:6px;color:var(--text-secondary);"><span style="width:13px;height:13px;border-radius:50%;background:#D85A30;"></span>TS</span>');
 
     if (state.activeDesc === 'HOMA') {
       const activeComps = Object.keys(compMeta).filter(function(c){ return state.homa[c]; });
       const activeRings = ['r1','r2','r3'].filter(function(r){ return state.homa[r]; });
       if (activeComps.length && activeRings.length) {
-        parts.push('<span style="width:0.5px;height:14px;background:var(--border-tertiary);"></span>');
-        parts.push('<span style="font-weight:500;color:var(--text-primary);">HOMA (right):</span>');
+        parts.push('<span style="width:1px;height:20px;background:var(--border-tertiary);"></span>');
+        parts.push('<span style="font-weight:600;color:var(--text-primary);">HOMA (right):</span>');
         activeRings.forEach(function(r){
-          parts.push('<span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:3px;border-radius:1px;background:'+rColor(r)+';"></span>'+ringStyles_LDM[r].label+'</span>');
+          parts.push('<span style="display:flex;align-items:center;gap:7px;"><span style="width:24px;height:5px;border-radius:2px;background:'+rColor(r)+';"></span>'+ringStyles_LDM[r].label+'</span>');
         });
         activeComps.forEach(function(c){
           const cm = compMeta[c];
           const svg = cm.dash.length
-            ? '<svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="'+axisColor+'" stroke-width="1.6" stroke-dasharray="'+cm.dash.join(',')+'"/></svg>'
-            : '<span style="width:22px;height:2px;background:'+axisColor+';display:inline-block;"></span>';
-          parts.push('<span style="display:flex;align-items:center;gap:5px;">'+svg+cm.label+'</span>');
+            ? '<svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="'+axisColor+'" stroke-width="2.5" stroke-dasharray="'+cm.dash.join(',')+'"/></svg>'
+            : '<span style="width:34px;height:3px;background:'+axisColor+';display:inline-block;border-radius:1px;"></span>';
+          parts.push('<span style="display:flex;align-items:center;gap:7px;">'+svg+cm.label+'</span>');
         });
       }
     } else if (state.activeDesc !== null) {
       const d = ldmDescs.find(function(x){ return x.id === state.activeDesc; });
-      parts.push('<span style="width:0.5px;height:14px;background:var(--border-tertiary);"></span>');
-      parts.push('<span style="font-weight:500;color:var(--text-primary);">'+d.group+' — '+d.sub+' (right):</span>');
+      parts.push('<span style="width:1px;height:20px;background:var(--border-tertiary);"></span>');
+      parts.push('<span style="font-weight:600;color:var(--text-primary);">'+d.group+' — '+d.sub+' (right):</span>');
       ['r1','r2','r3'].forEach(function(r){
         const rs = ringStyles_LDM[r];
         const svg = rs.dash.length
-          ? '<svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="'+axisColor+'" stroke-width="1.6" stroke-dasharray="'+rs.dash.join(',')+'"/></svg>'
-          : '<span style="width:22px;height:2px;background:'+axisColor+';display:inline-block;"></span>';
-        parts.push('<span style="display:flex;align-items:center;gap:5px;">'+svg+rs.label+'</span>');
+          ? '<svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="'+axisColor+'" stroke-width="2.5" stroke-dasharray="'+rs.dash.join(',')+'"/></svg>'
+          : '<span style="width:34px;height:3px;background:'+axisColor+';display:inline-block;border-radius:1px;"></span>';
+        parts.push('<span style="display:flex;align-items:center;gap:7px;">'+svg+rs.label+'</span>');
       });
-      parts.push('<span style="color:var(--text-tertiary);font-size:10.5px;">● data &nbsp; ○ mirrored</span>');
+      parts.push('<span style="color:var(--text-tertiary);font-size:12px;">● data &nbsp; ○ mirrored</span>');
     }
     legEl.innerHTML = parts.join(' ');
   }
