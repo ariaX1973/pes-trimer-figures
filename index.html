@@ -166,29 +166,51 @@
   };
 
   // LDM-family descriptors (4-anchor data per stationary point, per ring, per method)
-  // Order in each row: [Frob Full, RMSD mat, CT %, Q Frob, Q RMSD, S_hom]
-  // 2026-06-13: REGENERATED from AroX tableau.xlsx — ring numbering now consistent with
-  // atom-index mapping #1=outer [1,2,13,14,15], #2=central [3,4,5,6,12], #3=outer [7,8,9,10,11].
-  // Previous version had ring2/ring3 swapped in LDM only (HOMA was correct).
-  // Cross-check: HOMA = 1 - EN - GEO passes for all 36 xlsx rows (tolerance 1e-3).
+  // 2026-06-13 EXTENDED: array order is now [Frob, RMSD, CT, Q_Frob, Q_RMSD, S_hom, OffDiag, Diag] (8 values).
+  // Indices 0-5 unchanged for backward compat ; OffDiag and Diag appended at idx 6, 7.
+  // Ring numbering: #1 outer [1,2,13,14,15], #2 CENTRAL [3,4,5,6,12], #3 outer [7,8,9,10,11].
+  // HOMA = 1 - EN - GEO cross-check passes for all 36 xlsx rows.
   const LDM = {
     '6-31G': {
-      opt_1:   { ring1:[0.833,0.167,-5.474,0.241,0.054,0.529], ring2:[0.877,0.175,-6.413,0.212,0.047,0.524], ring3:[0.833,0.167,-5.474,0.241,0.054,0.529] },
-      opt_TS1: { ring1:[0.830,0.166,-5.423,0.243,0.054,0.530], ring2:[0.881,0.176,-6.186,0.227,0.051,0.525], ring3:[0.838,0.168,-5.241,0.256,0.057,0.533] },
-      opt_2:   { ring1:[0.832,0.166,-5.459,0.241,0.054,0.529], ring2:[0.874,0.175,-6.395,0.210,0.047,0.525], ring3:[0.828,0.166,-5.444,0.239,0.053,0.531] },
-      opt_TS2: { ring1:[0.827,0.165,-5.438,0.241,0.054,0.529], ring2:[0.876,0.175,-6.449,0.207,0.046,0.525], ring3:[0.835,0.167,-5.494,0.234,0.052,0.531] }
+      opt_1:   { ring1:[0.833,0.167,-5.474,0.241,0.054,0.529,0.427,0.715], ring2:[0.877,0.175,-6.413,0.212,0.047,0.524,0.411,0.774], ring3:[0.833,0.167,-5.474,0.241,0.054,0.529,0.427,0.715] },
+      opt_TS1: { ring1:[0.830,0.166,-5.423,0.243,0.054,0.530,0.428,0.711], ring2:[0.881,0.176,-6.186,0.227,0.051,0.525,0.420,0.774], ring3:[0.838,0.168,-5.241,0.256,0.057,0.533,0.438,0.714] },
+      opt_2:   { ring1:[0.832,0.166,-5.459,0.241,0.054,0.529,0.427,0.714], ring2:[0.874,0.175,-6.395,0.210,0.047,0.525,0.407,0.773], ring3:[0.828,0.166,-5.444,0.239,0.053,0.531,0.423,0.712] },
+      opt_TS2: { ring1:[0.827,0.165,-5.438,0.241,0.054,0.529,0.427,0.708], ring2:[0.876,0.175,-6.449,0.207,0.046,0.525,0.405,0.777], ring3:[0.835,0.167,-5.494,0.234,0.052,0.531,0.418,0.723] }
     },
     '6-31G(d)': {
-      opt_1:   { ring1:[0.827,0.165,-5.351,0.210,0.047,0.539], ring2:[0.881,0.176,-6.299,0.185,0.041,0.532], ring3:[0.827,0.165,-5.351,0.210,0.047,0.539] },
-      opt_TS1: { ring1:[0.825,0.165,-5.322,0.211,0.047,0.539], ring2:[0.880,0.176,-6.089,0.196,0.044,0.535], ring3:[0.828,0.166,-5.133,0.221,0.049,0.543] },
-      opt_2:   { ring1:[0.827,0.165,-5.348,0.210,0.047,0.539], ring2:[0.880,0.176,-6.281,0.184,0.041,0.533], ring3:[0.827,0.165,-5.354,0.208,0.047,0.540] },
-      opt_TS2: { ring1:[0.826,0.165,-5.354,0.210,0.047,0.539], ring2:[0.883,0.177,-6.329,0.181,0.041,0.532], ring3:[0.825,0.165,-5.376,0.205,0.046,0.539] }
+      opt_1:   { ring1:[0.827,0.165,-5.351,0.210,0.047,0.539,0.377,0.736], ring2:[0.881,0.176,-6.299,0.185,0.041,0.532,0.364,0.803], ring3:[0.827,0.165,-5.351,0.210,0.047,0.539,0.377,0.736] },
+      opt_TS1: { ring1:[0.825,0.165,-5.322,0.211,0.047,0.539,0.378,0.733], ring2:[0.880,0.176,-6.089,0.196,0.044,0.535,0.369,0.800], ring3:[0.828,0.166,-5.133,0.221,0.049,0.543,0.384,0.733] },
+      opt_2:   { ring1:[0.827,0.165,-5.348,0.210,0.047,0.539,0.377,0.736], ring2:[0.880,0.176,-6.281,0.184,0.041,0.533,0.361,0.803], ring3:[0.827,0.165,-5.354,0.208,0.047,0.540,0.374,0.738] },
+      opt_TS2: { ring1:[0.826,0.165,-5.354,0.210,0.047,0.539,0.377,0.735], ring2:[0.883,0.177,-6.329,0.181,0.041,0.532,0.360,0.806], ring3:[0.825,0.165,-5.376,0.205,0.046,0.539,0.372,0.737] }
     },
     '6-311+G(d,p)': {
-      opt_1:   { ring1:[0.855,0.171,-5.622,0.201,0.045,0.538], ring2:[0.906,0.181,-6.481,0.180,0.040,0.531], ring3:[0.855,0.171,-5.623,0.201,0.045,0.538] },
-      opt_TS1: { ring1:[0.855,0.171,-5.592,0.202,0.045,0.538], ring2:[0.908,0.182,-6.300,0.190,0.042,0.534], ring3:[0.855,0.171,-5.418,0.211,0.047,0.542] },
-      opt_2:   { ring1:[0.856,0.171,-5.622,0.201,0.045,0.538], ring2:[0.907,0.181,-6.470,0.180,0.040,0.531], ring3:[0.854,0.171,-5.601,0.200,0.045,0.538] },
-      opt_TS2: { ring1:[0.855,0.171,-5.627,0.201,0.045,0.537], ring2:[0.907,0.181,-6.517,0.176,0.039,0.531], ring3:[0.855,0.171,-5.651,0.196,0.044,0.538] }
+      opt_1:   { ring1:[0.855,0.171,-5.622,0.201,0.045,0.538,0.365,0.774], ring2:[0.906,0.181,-6.481,0.180,0.040,0.531,0.355,0.833], ring3:[0.855,0.171,-5.623,0.201,0.045,0.538,0.365,0.774] },
+      opt_TS1: { ring1:[0.855,0.171,-5.592,0.202,0.045,0.538,0.365,0.773], ring2:[0.908,0.182,-6.300,0.190,0.042,0.534,0.359,0.834], ring3:[0.855,0.171,-5.418,0.211,0.047,0.542,0.370,0.771] },
+      opt_2:   { ring1:[0.856,0.171,-5.622,0.201,0.045,0.538,0.365,0.774], ring2:[0.907,0.181,-6.470,0.180,0.040,0.531,0.353,0.835], ring3:[0.854,0.171,-5.601,0.200,0.045,0.538,0.363,0.773] },
+      opt_TS2: { ring1:[0.855,0.171,-5.627,0.201,0.045,0.537,0.365,0.773], ring2:[0.907,0.181,-6.517,0.176,0.039,0.531,0.351,0.837], ring3:[0.855,0.171,-5.651,0.196,0.044,0.538,0.360,0.775] }
+    }
+  };
+
+  // GLOBALS (per-molecule descriptors, 1 value per (method, point) — no ring distinction)
+  // HOMA_TOTAL = sum/mean across 3 rings ; Q(G), S-hom(G), S(G) = global molecule properties
+  const GLOBALS = {
+    '6-31G': {
+      opt_1:   { HOMA_TOTAL:0.2871, Q_G:0.0743, S_hom_G:0.1727, S_G:0.1978 },
+      opt_TS1: { HOMA_TOTAL:0.2752, Q_G:0.0746, S_hom_G:0.1708, S_G:0.1967 },
+      opt_2:   { HOMA_TOTAL:0.3030, Q_G:0.0744, S_hom_G:0.1728, S_G:0.1980 },
+      opt_TS2: { HOMA_TOTAL:0.3100, Q_G:0.0744, S_hom_G:0.1730, S_G:0.1983 }
+    },
+    '6-31G(d)': {
+      opt_1:   { HOMA_TOTAL:0.7716, Q_G:0.0761, S_hom_G:0.1745, S_G:0.1993 },
+      opt_TS1: { HOMA_TOTAL:0.7703, Q_G:0.0763, S_hom_G:0.1728, S_G:0.1982 },
+      opt_2:   { HOMA_TOTAL:0.7758, Q_G:0.0761, S_hom_G:0.1745, S_G:0.1994 },
+      opt_TS2: { HOMA_TOTAL:0.7777, Q_G:0.0761, S_hom_G:0.1747, S_G:0.1997 }
+    },
+    '6-311+G(d,p)': {
+      opt_1:   { HOMA_TOTAL:0.7826, Q_G:0.0761, S_hom_G:0.1745, S_G:0.1991 },
+      opt_TS1: { HOMA_TOTAL:0.7808, Q_G:0.0763, S_hom_G:0.1730, S_G:0.1982 },
+      opt_2:   { HOMA_TOTAL:0.7854, Q_G:0.0761, S_hom_G:0.1744, S_G:0.1993 },
+      opt_TS2: { HOMA_TOTAL:0.7880, Q_G:0.0761, S_hom_G:0.1746, S_G:0.1996 }
     }
   };
 
@@ -223,14 +245,25 @@
     G: { label:'GEO',  long:'GEO — bond-length alternation',       idx:2, dash:[2,3], width:1.5 }
   };
 
-  // LDM descriptor catalogue (4-anchor mode)
+  // LDM descriptor catalogue (4-anchor mode, per-ring)
   const ldmDescs = [
-    { id:'FROB',  group:'LDM',   sub:'Frob Full', idx:0 },
-    { id:'RMSDM', group:'LDM',   sub:'RMSD mat',  idx:1 },
-    { id:'CT',    group:'LDM',   sub:'CT %',      idx:2 },
-    { id:'QFROB', group:'LDM/R', sub:'Q Frob',    idx:3 },
-    { id:'QRMSD', group:'LDM/R', sub:'Q RMSD',    idx:4 },
-    { id:'SHOM',  group:'LDM·R', sub:'S_hom',     idx:5 }
+    { id:'FROB',    group:'LDM',   sub:'Frob Full', idx:0 },
+    { id:'RMSDM',   group:'LDM',   sub:'RMSD mat',  idx:1 },
+    { id:'CT',      group:'LDM',   sub:'CT %',      idx:2 },
+    { id:'QFROB',   group:'LDM/R', sub:'Q Frob',    idx:3 },
+    { id:'QRMSD',   group:'LDM/R', sub:'Q RMSD',    idx:4 },
+    { id:'SHOM',    group:'LDM·R', sub:'S_hom',     idx:5 },
+    { id:'OFFDIAG', group:'LDM',   sub:'Off Diag.', idx:6 },
+    { id:'DIAG',    group:'LDM',   sub:'Diag.',     idx:7 }
+  ];
+
+  // Global descriptor catalogue (4-anchor mode, ONE value per (method, point) — no ring distinction).
+  // When active, the chart draws one curve per active method (using method color, solid line).
+  const globalDescs = [
+    { id:'HOMA_TOT', group:'Global', sub:'HOMA total', key:'HOMA_TOTAL' },
+    { id:'QG',       group:'Global', sub:'Q (G)',      key:'Q_G' },
+    { id:'SHOMG',    group:'Global', sub:'S-hom (G)',  key:'S_hom_G' },
+    { id:'SG',       group:'Global', sub:'S (G)',      key:'S_G' }
   ];
 
   // =================== STATE ===================
@@ -283,6 +316,33 @@
       { x: phiTS1, y:vTS1, real:true  },
       { x: phi1,   y:v1,   real:true  }
     ];
+  }
+  // Global descriptor anchors (no ring distinction — one curve per method)
+  function globalAnchorsForMethod(method, key) {
+    const d = GLOBALS[method];
+    const v1   = d.opt_1[key];
+    const vTS1 = d.opt_TS1[key];
+    const v2   = d.opt_2[key];
+    const vTS2 = d.opt_TS2[key];
+    const phi1 = refAngles.opt_1, phiTS1 = refAngles.opt_TS1, phi2 = refAngles.opt_2, phiTS2 = refAngles.opt_TS2;
+    return [
+      { x:-phi1,   y:v1,   real:false },
+      { x:-phiTS1, y:vTS1, real:false },
+      { x:-phi2,   y:v2,   real:false },
+      { x: phiTS2, y:vTS2, real:true  },
+      { x: phi2,   y:v2,   real:true  },
+      { x: phiTS1, y:vTS1, real:true  },
+      { x: phi1,   y:v1,   real:true  }
+    ];
+  }
+  // Find which catalogue + entry an activeDesc id belongs to
+  function findActiveDesc(id) {
+    if (id === 'HOMA') return { kind:'HOMA' };
+    const ldm = ldmDescs.find(function(x){ return x.id === id; });
+    if (ldm) return { kind:'ldm', desc:ldm };
+    const g = globalDescs.find(function(x){ return x.id === id; });
+    if (g) return { kind:'global', desc:g };
+    return null;
   }
   function smoothInterp(anchors, nSamples, xMin, xMax) {
     nSamples = nSamples || 120; xMin = xMin == null ? -180 : xMin; xMax = xMax == null ? 180 : xMax;
@@ -352,6 +412,15 @@
       lastGroup = d.group;
     }
     barHTML += '<button class="descBtn" data-desc="'+d.id+'">'+d.sub+'</button>';
+  });
+  // Then: Global descriptors (per-molecule, no ring distinction)
+  globalDescs.forEach(function(d, i){
+    if (d.group !== lastGroup) {
+      barHTML += '<span style="width:0.5px;height:18px;background:var(--border-tertiary);margin:0 4px;"></span>';
+      barHTML += '<span class="descGroupLabel">'+d.group+'</span>';
+      lastGroup = d.group;
+    }
+    barHTML += '<button class="descBtn" data-desc="'+d.id+'" title="Global descriptor — one curve per method (no ring)">'+d.sub+'</button>';
   });
   descBar.innerHTML = barHTML;
 
@@ -444,39 +513,74 @@
         });
       });
     } else if (state.activeDesc !== null) {
-      // LDM mode: 4-anchor interpolation, color = method, line style = ring
-      const desc = ldmDescs.find(function(d){ return d.id === state.activeDesc; });
-      activeMethods.forEach(function(m){
-        const c = mColor(m);
-        ['r1','r2','r3'].forEach(function(r){
-          const rs = ringStyles_LDM[r];
-          const anchors = ldmAnchorsForRing(m, desc.idx, 'ring'+r.charAt(1));
+      const meta = findActiveDesc(state.activeDesc);
+      if (meta && meta.kind === 'ldm') {
+        // LDM mode: 4-anchor interpolation, color = method, line style = ring
+        const desc = meta.desc;
+        activeMethods.forEach(function(m){
+          const c = mColor(m);
+          ['r1','r2','r3'].forEach(function(r){
+            const rs = ringStyles_LDM[r];
+            const anchors = ldmAnchorsForRing(m, desc.idx, 'ring'+r.charAt(1));
+            const interp = smoothInterp(anchors, 120, -180, 180);
+            ds.push({
+              label: m + ' · ' + rs.label + ' (interp.)',
+              data: interp, parsing:false,
+              borderColor: c, backgroundColor: c,
+              borderWidth: 1.5, borderDash: rs.dash, pointRadius: 0, tension: 0,
+              yAxisID:'yR', order:10, _kind:'ldmLine', _method:m, _ring:r
+            });
+            const real = anchors.filter(function(a){ return a.real; });
+            const mirr = anchors.filter(function(a){ return !a.real; });
+            ds.push({
+              label: m + ' · ' + rs.label + ' (data)',
+              type:'scatter', data:real, parsing:false,
+              backgroundColor:c, borderColor:c,
+              pointRadius:4, pointHoverRadius:6, pointStyle:rs.marker,
+              yAxisID:'yR', order:5, _kind:'ldmPt', _method:m, _ring:r
+            });
+            ds.push({
+              label: m + ' · ' + rs.label + ' (mirror)',
+              type:'scatter', data:mirr, parsing:false,
+              backgroundColor:'transparent', borderColor:hexToRgba(c,0.6), pointBorderWidth:1.3,
+              pointRadius:3.6, pointHoverRadius:5, pointStyle:rs.marker,
+              yAxisID:'yR', order:5, _kind:'ldmMirror', _method:m, _ring:r
+            });
+          });
+        });
+      } else if (meta && meta.kind === 'global') {
+        // Global mode: 4-anchor interpolation, ONE curve per method (no ring)
+        const desc = meta.desc;
+        activeMethods.forEach(function(m){
+          const c = mColor(m);
+          const ms = methodMeta[m].shape;
+          const anchors = globalAnchorsForMethod(m, desc.key);
           const interp = smoothInterp(anchors, 120, -180, 180);
           ds.push({
-            label: m + ' · ' + rs.label + ' (interp.)',
+            label: m + ' (interp.)',
             data: interp, parsing:false,
             borderColor: c, backgroundColor: c,
-            borderWidth: 1.5, borderDash: rs.dash, pointRadius: 0, tension: 0,
-            yAxisID:'yR', order:10, _kind:'ldmLine', _method:m, _ring:r
+            borderWidth: 2.0, borderDash: [], pointRadius: 0, tension: 0,
+            yAxisID:'yR', order:10, _kind:'globalLine', _method:m
           });
           const real = anchors.filter(function(a){ return a.real; });
           const mirr = anchors.filter(function(a){ return !a.real; });
           ds.push({
-            label: m + ' · ' + rs.label + ' (data)',
+            label: m + ' (data)',
             type:'scatter', data:real, parsing:false,
             backgroundColor:c, borderColor:c,
-            pointRadius:4, pointHoverRadius:6, pointStyle:rs.marker,
-            yAxisID:'yR', order:5, _kind:'ldmPt', _method:m, _ring:r
+            pointRadius:4.5, pointHoverRadius:6.5, pointStyle:ms,
+            yAxisID:'yR', order:5, _kind:'globalPt', _method:m
           });
           ds.push({
-            label: m + ' · ' + rs.label + ' (mirror)',
+            label: m + ' (mirror)',
             type:'scatter', data:mirr, parsing:false,
             backgroundColor:'transparent', borderColor:hexToRgba(c,0.6), pointBorderWidth:1.3,
-            pointRadius:3.6, pointHoverRadius:5, pointStyle:rs.marker,
-            yAxisID:'yR', order:5, _kind:'ldmMirror', _method:m, _ring:r
+            pointRadius:4, pointHoverRadius:5.5, pointStyle:ms,
+            yAxisID:'yR', order:5, _kind:'globalMirror', _method:m
           });
         });
-      });
+      }
     }
 
     return ds;
@@ -497,14 +601,22 @@
         });
       });
     } else {
-      const desc = ldmDescs.find(function(d){ return d.id === state.activeDesc; });
-      activeMethods.forEach(function(m){
-        ['ring1','ring2','ring3'].forEach(function(rk){
-          ['opt_1','opt_TS1','opt_2','opt_TS2'].forEach(function(sp){
-            all.push(LDM[m][sp][rk][desc.idx]);
+      const meta = findActiveDesc(state.activeDesc);
+      if (meta && meta.kind === 'ldm') {
+        activeMethods.forEach(function(m){
+          ['ring1','ring2','ring3'].forEach(function(rk){
+            ['opt_1','opt_TS1','opt_2','opt_TS2'].forEach(function(sp){
+              all.push(LDM[m][sp][rk][meta.desc.idx]);
+            });
           });
         });
-      });
+      } else if (meta && meta.kind === 'global') {
+        activeMethods.forEach(function(m){
+          ['opt_1','opt_TS1','opt_2','opt_TS2'].forEach(function(sp){
+            all.push(GLOBALS[m][sp][meta.desc.key]);
+          });
+        });
+      }
     }
     if (!all.length) return { min:null, max:null };
     const mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
@@ -518,8 +630,9 @@
       const comps = Object.keys(compMeta).filter(function(c){ return state.homa[c]; }).map(function(c){ return compMeta[c].label; });
       return 'HOMA components: ' + comps.join(' / ');
     }
-    const d = ldmDescs.find(function(x){ return x.id === state.activeDesc; });
-    return d.group + ' — ' + d.sub;
+    const meta = findActiveDesc(state.activeDesc);
+    if (!meta) return '';
+    return meta.desc.group + ' — ' + meta.desc.sub;
   }
 
   function rebuildChart() {
@@ -567,6 +680,10 @@
                 }
                 if (ds._kind === 'homa') {
                   return ds._method + ' · ' + ringStyles_LDM[ds._ring].label + ' · ' + compMeta[ds._comp].long + ': ' + it.parsed.y.toFixed(3);
+                }
+                if (ds._kind === 'globalLine' || ds._kind === 'globalPt' || ds._kind === 'globalMirror') {
+                  const gsuffix = ds._kind === 'globalMirror' ? ' (mirrored)' : '';
+                  return ds._method + ' · global: ' + it.parsed.y.toFixed(4) + gsuffix;
                 }
                 // ldmLine, ldmPt, ldmMirror
                 const suffix = ds._kind === 'ldmMirror' ? ' (mirrored)' : '';
@@ -653,17 +770,26 @@
         });
       }
     } else if (state.activeDesc !== null) {
-      const d = ldmDescs.find(function(x){ return x.id === state.activeDesc; });
-      parts.push('<span style="width:1px;height:20px;background:var(--border-tertiary);"></span>');
-      parts.push('<span style="font-weight:600;color:var(--text-primary);">'+d.group+' — '+d.sub+' (right):</span>');
-      ['r1','r2','r3'].forEach(function(r){
-        const rs = ringStyles_LDM[r];
-        const svg = rs.dash.length
-          ? '<svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="'+axisColor+'" stroke-width="2.5" stroke-dasharray="'+rs.dash.join(',')+'"/></svg>'
-          : '<span style="width:34px;height:3px;background:'+axisColor+';display:inline-block;border-radius:1px;"></span>';
-        parts.push('<span style="display:flex;align-items:center;gap:7px;">'+svg+rs.label+'</span>');
-      });
-      parts.push('<span style="color:var(--text-tertiary);font-size:12px;">● data &nbsp; ○ mirrored</span>');
+      const meta = findActiveDesc(state.activeDesc);
+      if (meta && meta.kind === 'ldm') {
+        const d = meta.desc;
+        parts.push('<span style="width:1px;height:20px;background:var(--border-tertiary);"></span>');
+        parts.push('<span style="font-weight:600;color:var(--text-primary);">'+d.group+' — '+d.sub+' (right):</span>');
+        ['r1','r2','r3'].forEach(function(r){
+          const rs = ringStyles_LDM[r];
+          const svg = rs.dash.length
+            ? '<svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="'+axisColor+'" stroke-width="2.5" stroke-dasharray="'+rs.dash.join(',')+'"/></svg>'
+            : '<span style="width:34px;height:3px;background:'+axisColor+';display:inline-block;border-radius:1px;"></span>';
+          parts.push('<span style="display:flex;align-items:center;gap:7px;">'+svg+rs.label+'</span>');
+        });
+        parts.push('<span style="color:var(--text-tertiary);font-size:12px;">● data &nbsp; ○ mirrored</span>');
+      } else if (meta && meta.kind === 'global') {
+        const d = meta.desc;
+        parts.push('<span style="width:1px;height:20px;background:var(--border-tertiary);"></span>');
+        parts.push('<span style="font-weight:600;color:var(--text-primary);">'+d.group+' — '+d.sub+' (right):</span>');
+        parts.push('<span style="color:var(--text-secondary);font-size:13px;">one curve per method (no ring distinction)</span>');
+        parts.push('<span style="color:var(--text-tertiary);font-size:12px;">● data &nbsp; ○ mirrored</span>');
+      }
     }
     legEl.innerHTML = parts.join(' ');
   }
@@ -752,14 +878,30 @@
       '<p style="margin:0 0 10px;font-size:10px;color:var(--text-tertiary);line-height:1.5;">'+
         '<strong style="color:var(--text-secondary);font-weight:500;">EN</strong> défaut de position moyenne · '+
         '<strong style="color:var(--text-secondary);font-weight:500;">GEO</strong> défaut d&apos;égalisation</p>'+
-      '<p style="margin:8px 0 4px;font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;">LDM descriptors</p>'+
+      '<p style="margin:8px 0 4px;font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;">LDM descriptors (per ring)</p>'+
       '<table>'+
         '<thead><tr style="border-bottom:0.5px solid var(--border-tertiary);">'+
           '<th style="padding:3px 5px;text-align:left;font-size:10px;color:var(--text-secondary);font-weight:500;">Descriptor</th>'+
           '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;">R 1</th>'+
           '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;">R 2</th>'+
           '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;">R 3</th>'+
-        '</tr></thead><tbody>'+ldmRows+'</tbody></table>';
+        '</tr></thead><tbody>'+ldmRows+'</tbody></table>'+
+      // Globals section
+      '<p style="margin:10px 0 4px;font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.04em;">Global descriptors (per molecule)</p>'+
+      '<table>'+
+        '<thead><tr style="border-bottom:0.5px solid var(--border-tertiary);">'+
+          '<th style="padding:3px 5px;text-align:left;font-size:10px;color:var(--text-secondary);font-weight:500;">Descriptor</th>'+
+          '<th style="padding:3px 5px;text-align:right;font-size:10px;color:var(--text-secondary);font-weight:500;">Value</th>'+
+        '</tr></thead><tbody>' +
+        globalDescs.map(function(g){
+          const v = GLOBALS[method][name][g.key];
+          const isActive = state.activeDesc === g.id;
+          return '<tr style="' + (isActive ? 'background:var(--bg-info);' : '') + '">' +
+            '<td style="padding:3px 5px;font-size:11.5px;color:'+(isActive?'var(--text-info)':'var(--text-secondary)')+';font-weight:'+(isActive?'500':'400')+';">'+g.sub+'</td>' +
+            '<td style="padding:3px 5px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;">'+v.toFixed(4)+'</td>' +
+            '</tr>';
+        }).join('') +
+        '</tbody></table>';
     }
 
     ic.innerHTML = tabsHTML + '<div id="tabContent">'+tableFor(activeMethods[0])+'</div>' +
@@ -789,8 +931,10 @@
       label += '  ·  HOMA components : ' + (comps.length ? comps.join(', ') : '—');
       label += '  ·  Rings : ' + (rings.length ? rings.map(function(r){ return ringStyles_LDM[r].label; }).join(' + ') : '—');
     } else if (state.activeDesc !== null){
-      const d = ldmDescs.find(function(x){ return x.id === state.activeDesc; });
-      if (d) label += '  ·  Descriptor : ' + d.group + ' — ' + d.sub;
+      const meta = findActiveDesc(state.activeDesc);
+      if (meta && (meta.kind === 'ldm' || meta.kind === 'global')) {
+        label += '  ·  Descriptor : ' + meta.desc.group + ' — ' + meta.desc.sub;
+      }
     } else {
       label += '  ·  Descriptor : —';
     }
