@@ -56,6 +56,29 @@
   .method-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
   .method-tab{font-size:11px;padding:3px 8px;border:0.5px solid var(--border-tertiary);border-radius:var(--radius-md);background:transparent;color:var(--text-secondary);cursor:pointer}
   .method-tab.active{color:var(--text-primary);border-color:var(--border-secondary);font-weight:500}
+
+  /* Compare panel + Grid panel (multi-descriptor views) */
+  .compare-panel,.grid-panel{background:var(--bg-secondary);border:0.5px solid var(--border-tertiary);border-radius:var(--radius-lg);padding:14px;margin-top:16px}
+  .compare-panel summary,.grid-panel summary{cursor:pointer;font-weight:500;font-size:14px;list-style:none;display:flex;align-items:center;gap:6px;color:var(--text-primary)}
+  .compare-panel summary::before,.grid-panel summary::before{content:'▾';display:inline-block;transition:transform 0.15s;color:var(--text-secondary)}
+  .compare-panel:not([open]) summary::before,.grid-panel:not([open]) summary::before{transform:rotate(-90deg)}
+  .compare-controls{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .compare-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+  .compare-row .label{color:var(--text-secondary);font-size:11px;min-width:90px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500}
+  .compare-chip{border:0.5px solid var(--border-tertiary);background:transparent;color:var(--text-primary);padding:3px 9px;border-radius:14px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:5px;user-select:none;font-family:inherit}
+  .compare-chip:hover{background:var(--bg-primary)}
+  .compare-chip[aria-pressed="true"]{border-width:1.5px;padding:2.5px 8.5px;font-weight:500;border-color:var(--border-secondary)}
+  .compare-canvas-wrap{position:relative;height:380px;margin-top:10px}
+  .compare-actions{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .compare-legend{font-size:12px;color:var(--text-secondary);margin-top:8px;display:flex;flex-wrap:wrap;gap:6px 14px}
+  .compare-legend-item{display:inline-flex;align-items:center;gap:5px}
+  .compare-legend-stroke{width:22px;height:0;border-top:2.5px solid currentColor;display:inline-block}
+  .grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:10px}
+  .grid-card{background:var(--bg-primary);border:0.5px solid var(--border-tertiary);border-radius:var(--radius-md);padding:8px}
+  .grid-card-title{font-size:12.5px;font-weight:600;color:var(--text-primary);padding:0 2px 4px;display:flex;justify-content:space-between;align-items:baseline}
+  .grid-card-family{font-size:10.5px;color:var(--text-tertiary);font-weight:400;text-transform:uppercase;letter-spacing:0.04em}
+  .grid-card-canvas-wrap{position:relative;height:180px}
+  .grid-empty{color:var(--text-secondary);font-size:12.5px;padding:14px;text-align:center;border:1px dashed var(--border-tertiary);border-radius:var(--radius-md)}
 </style>
 </head>
 <body>
@@ -145,6 +168,58 @@
     HOMA, EN and GEO are evaluated at all 36 optimised geometries per ring.
     Six LDM-family descriptors are tabulated at 4 stationary points only; their curves are 7-anchor Catmull–Rom interpolations (3 mirror anchors derived from PES C₂ symmetry about φ = 0°).
   </p>
+
+  <details class="compare-panel" id="compare-panel" open>
+    <summary>Panel comparatif — superpose plusieurs descripteurs sur un seul graphe (φ continu)</summary>
+    <div class="compare-controls">
+      <div class="compare-row" id="cmp-methods-row">
+        <span class="label">Methods</span>
+      </div>
+      <div class="compare-row" id="cmp-rings-row">
+        <span class="label">Rings</span>
+      </div>
+      <div class="compare-row" id="cmp-desc-row">
+        <span class="label">Descripteurs</span>
+      </div>
+      <div class="compare-row">
+        <span class="label">Options</span>
+        <button class="compare-chip" id="cmp-pes" aria-pressed="true">PES en arrière-plan</button>
+        <button class="compare-chip" id="cmp-normalize" aria-pressed="true">Normaliser [0,1]</button>
+        <button class="compare-chip" id="cmp-clear">Tout désélectionner</button>
+      </div>
+    </div>
+    <div class="compare-canvas-wrap"><canvas id="compare-chart"></canvas></div>
+    <div class="compare-legend" id="compare-legend"></div>
+    <div class="compare-actions">
+      <button class="compare-chip" id="cmp-download" style="border-color:var(--border-secondary);font-weight:500">⬇ Télécharger ce panel en PNG</button>
+    </div>
+  </details>
+
+  <details class="grid-panel" id="grid-panel" open>
+    <summary>Panels par descripteur — chaque descripteur dans son propre mini-graphe</summary>
+    <div class="compare-controls">
+      <div class="compare-row" id="grid-methods-row">
+        <span class="label">Methods</span>
+      </div>
+      <div class="compare-row" id="grid-rings-row">
+        <span class="label">Rings</span>
+      </div>
+      <div class="compare-row" id="grid-desc-row">
+        <span class="label">Descripteurs</span>
+      </div>
+      <div class="compare-row">
+        <span class="label">Actions</span>
+        <button class="compare-chip" id="grid-preset-aroma">Preset aromaticité</button>
+        <button class="compare-chip" id="grid-clear">Tout désélectionner</button>
+      </div>
+    </div>
+    <div class="grid-cards" id="grid-cards">
+      <p class="grid-empty">Coche des descripteurs ci-dessus pour les afficher en mini-graphes.</p>
+    </div>
+    <div class="compare-actions">
+      <button class="compare-chip" id="grid-download" style="border-color:var(--border-secondary);font-weight:500">⬇ Télécharger le grid panel en PNG</button>
+    </div>
+  </details>
 
 </div>
 
@@ -1033,6 +1108,428 @@
 
   // =================== INIT ===================
   rebuildChart();
+
+  // =================== COMPARE + GRID PANELS ===================
+  // Unified descriptor catalog for the panels (flatten HOMA components + ldmDescs + globalDescs)
+  const CMP_DESCRIPTORS = [
+    { key:'HOMA', label:'HOMA', family:'HOMA',  kind:'homa36', idx:0 },
+    { key:'EN',   label:'EN',   family:'HOMA',  kind:'homa36', idx:1 },
+    { key:'GEO',  label:'GEO',  family:'HOMA',  kind:'homa36', idx:2 },
+    ...ldmDescs.map(d => ({ key:d.id, label:d.sub, family:d.group, kind:'ldm', idx:d.idx })),
+    ...globalDescs.map(d => ({ key:d.id, label:d.sub, family:d.group, kind:'global', dataKey:d.key }))
+  ];
+  function cmpDescMeta(key) { return CMP_DESCRIPTORS.find(d => d.key === key); }
+  const cmpPalette = ['#185FA5','#BA7517','#993556','#0F6E56','#534AB7','#993C1D','#D85A30','#5DCAA5','#AFA9EC','#F0997B','#85B7EB','#FAC775','#ED93B1','#7C5C2E'];
+  function cmpColor(i) { return cmpPalette[i % cmpPalette.length]; }
+
+  const cmpState = {
+    methods: new Set(['6-311+G(d,p)']),
+    rings:   new Set(['r1','r2','r3']),
+    descriptors: new Set(['HOMA']),
+    showPES: true,
+    normalize: true,
+  };
+  const gridState = {
+    methods: new Set(['6-311+G(d,p)']),
+    rings:   new Set(['r1','r2','r3']),
+    descriptors: new Set(['HOMA','HOMA_TOT']),
+  };
+
+  // Compute a curve for (descriptor × method) over -180..180, averaging across active rings if per-ring.
+  function cmpComputeCurve(panelState, descKey, method) {
+    const d = cmpDescMeta(descKey);
+    if (!d) return [];
+    if (d.kind === 'homa36') {
+      // 36-point real data; aggregate across active rings (average) if more than one ring active
+      const pts = HOMA36[method];
+      const activeRings = ['r1','r2','r3'].filter(r => panelState.rings.has(r));
+      if (!activeRings.length) return [];
+      return pts.map(p => {
+        const vals = activeRings.map(r => p[r][d.idx]).filter(v => Number.isFinite(v));
+        return { x: p.p, y: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null };
+      });
+    } else if (d.kind === 'ldm') {
+      const activeRings = ['r1','r2','r3'].filter(r => panelState.rings.has(r));
+      if (!activeRings.length) return [];
+      // Sample at common X grid (120 points), average across rings
+      const perRing = activeRings.map(r => {
+        const anchors = ldmAnchorsForRing(method, d.idx, 'ring'+r.charAt(1));
+        return smoothInterp(anchors, 120, -180, 180);
+      });
+      const N = perRing[0].length;
+      const out = [];
+      for (let i = 0; i < N; i++) {
+        const vals = perRing.map(arr => arr[i].y).filter(v => Number.isFinite(v));
+        out.push({ x: perRing[0][i].x, y: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null });
+      }
+      return out;
+    } else if (d.kind === 'global') {
+      const anchors = globalAnchorsForMethod(method, d.dataKey);
+      return smoothInterp(anchors, 120, -180, 180);
+    }
+    return [];
+  }
+
+  function cmpBuildChipRow(rowEl, items, predicate, onClick, swatchColorFn, dataAttr) {
+    items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'compare-chip';
+      btn.setAttribute(dataAttr, item.key);
+      btn.setAttribute('aria-pressed', predicate(item.key));
+      const sw = swatchColorFn ? `<span style="width:9px;height:9px;border-radius:50%;display:inline-block;background:${swatchColorFn(item.key)}"></span>` : '';
+      btn.innerHTML = sw + item.label;
+      btn.addEventListener('click', () => onClick(item.key, btn));
+      rowEl.appendChild(btn);
+    });
+  }
+
+  function cmpBuildDescriptorRow(rowEl, panelState, onChange, dataAttr) {
+    let lastFam = null;
+    CMP_DESCRIPTORS.forEach(d => {
+      if (d.family !== lastFam) {
+        if (lastFam !== null) {
+          const sep = document.createElement('span');
+          sep.style.cssText = 'color:var(--border-tertiary);margin:0 0.2rem;user-select:none';
+          sep.textContent = '|';
+          rowEl.appendChild(sep);
+        }
+        const tag = document.createElement('span');
+        tag.style.cssText = 'color:var(--text-tertiary);font-size:10.5px;margin-right:0.2rem';
+        tag.textContent = d.family + ':';
+        rowEl.appendChild(tag);
+        lastFam = d.family;
+      }
+      const btn = document.createElement('button');
+      btn.className = 'compare-chip';
+      btn.setAttribute(dataAttr, d.key);
+      btn.setAttribute('aria-pressed', panelState.descriptors.has(d.key));
+      btn.textContent = d.label;
+      btn.addEventListener('click', () => {
+        if (panelState.descriptors.has(d.key)) panelState.descriptors.delete(d.key);
+        else panelState.descriptors.add(d.key);
+        btn.setAttribute('aria-pressed', panelState.descriptors.has(d.key));
+        onChange();
+      });
+      rowEl.appendChild(btn);
+    });
+  }
+
+  // ---- Compare panel ----
+  let cmpChart;
+  function cmpBuildToolbar() {
+    cmpBuildChipRow(
+      document.getElementById('cmp-methods-row'),
+      methodOrder.map(m => ({ key:m, label:m })),
+      k => cmpState.methods.has(k),
+      (k, btn) => {
+        if (cmpState.methods.has(k)) { if (cmpState.methods.size > 1) cmpState.methods.delete(k); }
+        else cmpState.methods.add(k);
+        btn.setAttribute('aria-pressed', cmpState.methods.has(k));
+        cmpRender();
+      }, k => mColor(k), 'data-cmp-method');
+
+    cmpBuildChipRow(
+      document.getElementById('cmp-rings-row'),
+      ['r1','r2','r3'].map(r => ({ key:r, label:ringStyles_LDM[r].label })),
+      k => cmpState.rings.has(k),
+      (k, btn) => {
+        if (cmpState.rings.has(k)) cmpState.rings.delete(k);
+        else cmpState.rings.add(k);
+        btn.setAttribute('aria-pressed', cmpState.rings.has(k));
+        cmpRender();
+      }, k => rColor(k), 'data-cmp-ring');
+
+    cmpBuildDescriptorRow(document.getElementById('cmp-desc-row'), cmpState, cmpRender, 'data-cmp-desc');
+
+    document.getElementById('cmp-pes').addEventListener('click', (e) => {
+      cmpState.showPES = !cmpState.showPES;
+      e.currentTarget.setAttribute('aria-pressed', cmpState.showPES);
+      cmpRender();
+    });
+    document.getElementById('cmp-normalize').addEventListener('click', (e) => {
+      cmpState.normalize = !cmpState.normalize;
+      e.currentTarget.setAttribute('aria-pressed', cmpState.normalize);
+      cmpRender();
+    });
+    document.getElementById('cmp-clear').addEventListener('click', () => {
+      cmpState.descriptors.clear();
+      document.querySelectorAll('[data-cmp-desc]').forEach(b => b.setAttribute('aria-pressed','false'));
+      cmpRender();
+    });
+    document.getElementById('cmp-download').addEventListener('click', cmpDownload);
+  }
+  function cmpInit() {
+    const ctx = document.getElementById('compare-chart').getContext('2d');
+    cmpChart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: [] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 150 },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        scales: {
+          x: { type: 'linear', min: -180, max: 180, ticks: { stepSize: 60, callback: v => v + '°' },
+               title: { display: true, text: 'φ  D(12,6,7,11) (°)' }, grid: { color: gridColor } },
+          y: { title: { display: true, text: 'Valeur normalisée [0,1]' }, ticks: { color: axisColor }, grid: { color: gridColor } },
+          yPES: { display: false, position: 'right', title: { display: false }, grid: { drawOnChartArea: false } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ctx.dataset._tooltip ? ctx.dataset._tooltip(ctx) : ctx.parsed.y.toFixed(3) } }
+        }
+      }
+    });
+  }
+  function cmpRender() {
+    if (!cmpChart) return;
+    const datasets = [];
+    if (cmpState.showPES) {
+      cmpState.methods.forEach(m => {
+        datasets.push({
+          label: `PES ${m}`, data: PES[m].map(p => ({ x: p[0], y: p[1] })),
+          borderColor: 'rgba(127,127,127,0.45)', backgroundColor: 'rgba(127,127,127,0.10)',
+          borderWidth: 1.5, pointRadius: 0, tension: 0.25, yAxisID: 'yPES',
+          _tooltip: ctx => `PES ${m}: φ=${ctx.parsed.x.toFixed(0)}°, ΔE=${ctx.parsed.y.toFixed(2)} kcal/mol`
+        });
+      });
+    }
+    cmpChart.options.scales.yPES.display = cmpState.showPES;
+
+    const series = [];
+    [...cmpState.descriptors].forEach((descKey, idx) => {
+      const d = cmpDescMeta(descKey);
+      if (!d) return;
+      cmpState.methods.forEach(method => {
+        const curve = cmpComputeCurve(cmpState, descKey, method);
+        series.push({ key: descKey, label: d.label, family: d.family, method, curve, color: cmpColor(idx) });
+      });
+    });
+
+    if (!series.length) { cmpChart.data.datasets = datasets; cmpChart.update(); cmpBuildLegend([]); return; }
+
+    let plotted;
+    if (cmpState.normalize) {
+      plotted = series.map(s => {
+        const finite = s.curve.map(p => p.y).filter(v => Number.isFinite(v));
+        const lo = Math.min(...finite), hi = Math.max(...finite); const range = hi - lo || 1;
+        return { ...s, normCurve: s.curve.map(p => ({ x: p.x, y: Number.isFinite(p.y) ? (p.y - lo) / range : null })), range: [lo, hi] };
+      });
+    } else {
+      plotted = series.map(s => ({ ...s, normCurve: s.curve, range: null }));
+    }
+    plotted.forEach(s => {
+      datasets.push({
+        label: `${s.label} (${s.method})`, data: s.normCurve,
+        borderColor: s.color, backgroundColor: s.color,
+        borderWidth: 1.8, pointRadius: 0, pointHoverRadius: 3,
+        borderDash: methodMeta[s.method].shape === 'triangle' ? [6,4] : (methodMeta[s.method].shape === 'rect' ? [2,3] : []),
+        tension: 0.15, spanGaps: true, yAxisID: 'y',
+        _tooltip: ctx => {
+          const i = ctx.dataIndex;
+          const rawY = s.curve[i]?.y;
+          const rawStr = Number.isFinite(rawY) ? rawY.toFixed(3) : '—';
+          const phi = (s.curve[i]?.x ?? 0).toFixed(0);
+          if (cmpState.normalize && s.range) {
+            return `${s.label} (${s.method}) @ ${phi}° = ${rawStr}  (norm: ${(ctx.parsed.y*100).toFixed(0)}%, [${s.range[0].toFixed(2)},${s.range[1].toFixed(2)}])`;
+          }
+          return `${s.label} (${s.method}) @ ${phi}° = ${rawStr}`;
+        }
+      });
+    });
+    cmpChart.options.scales.y.title.text = cmpState.normalize ? 'Valeur normalisée [0, 1]' : 'Valeur brute';
+    if (cmpState.normalize) { cmpChart.options.scales.y.min = -0.05; cmpChart.options.scales.y.max = 1.05; }
+    else { delete cmpChart.options.scales.y.min; delete cmpChart.options.scales.y.max; }
+    cmpChart.data.datasets = datasets; cmpChart.update();
+    cmpBuildLegend(plotted);
+  }
+  function cmpBuildLegend(series) {
+    const root = document.getElementById('compare-legend'); root.innerHTML = '';
+    if (cmpState.showPES) {
+      const it = document.createElement('span'); it.className = 'compare-legend-item';
+      it.style.color = 'rgba(127,127,127,0.8)';
+      it.innerHTML = `<span class="compare-legend-stroke"></span><span style="color:var(--text-primary)">PES (axe Y droit)</span>`;
+      root.appendChild(it);
+    }
+    const seen = new Set();
+    series.forEach(s => {
+      if (seen.has(s.key)) return; seen.add(s.key);
+      const it = document.createElement('span'); it.className = 'compare-legend-item'; it.style.color = s.color;
+      const r = s.range ? ` <small style="color:var(--text-tertiary)">[${s.range[0].toFixed(2)}, ${s.range[1].toFixed(2)}]</small>` : '';
+      it.innerHTML = `<span class="compare-legend-stroke"></span><span style="color:var(--text-primary)">${s.label}${r}</span>`;
+      root.appendChild(it);
+    });
+    if (cmpState.methods.size > 1) {
+      const it = document.createElement('span'); it.className = 'compare-legend-item'; it.style.color = 'var(--text-secondary)';
+      it.innerHTML = `<span style="color:var(--text-primary)">solid: 6-31G · dashed [6,4]: 6-31G(d) · dotted [2,3]: 6-311+G(d,p)</span>`;
+      root.appendChild(it);
+    }
+    if (!series.length && !cmpState.showPES) root.innerHTML = `<span style="color:var(--text-secondary)">Rien à afficher.</span>`;
+  }
+  async function cmpDownload() {
+    if (!cmpChart) return;
+    const DPR = Math.max(1, window.devicePixelRatio || 1);
+    const F_TITLE = 30, F_SUB = Math.round(13 * DPR), margin = Math.round(24 * DPR), lineGap = Math.round(7 * DPR);
+    const titleH = F_TITLE + F_SUB * 2 + lineGap * 3 + Math.round(8 * DPR);
+    const legendGap = Math.round(10 * DPR);
+    const chartImg = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = cmpChart.toBase64Image('image/png', 1); });
+    const legendData = await captureHtmlAsImage(document.getElementById('compare-legend'), chartImg.naturalWidth, DPR);
+    const legendH = legendData ? legendData.height : 0;
+    const out = document.createElement('canvas');
+    out.width = chartImg.naturalWidth + margin * 2;
+    out.height = chartImg.naturalHeight + margin * 2 + titleH + (legendH ? legendH + legendGap : 0);
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, out.width, out.height); ctx.textBaseline = 'top';
+    let y = margin;
+    ctx.fillStyle = '#1A1A1A'; ctx.font = 'bold ' + F_TITLE + 'px -apple-system, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Trimer thiophene PES — Compare panel', margin, y); y += F_TITLE + lineGap;
+    ctx.font = F_SUB + 'px -apple-system, "Segoe UI", Arial, sans-serif'; ctx.fillStyle = '#6B6B6B';
+    ctx.fillText('Method : B3LYP / multiple basis sets (Gaussian 16)', margin, y); y += F_SUB + lineGap;
+    const cfg = `Methods: ${[...cmpState.methods].join(' + ')}  ·  Rings: ${[...cmpState.rings].sort().join('+')}  ·  ${[...cmpState.descriptors].map(k => cmpDescMeta(k)?.label || k).join(', ') || '—'}  ·  ${cmpState.normalize ? 'norm [0,1]' : 'brut'}${cmpState.showPES ? '  ·  PES bg' : ''}`;
+    ctx.fillText('Config: ' + cfg, margin, y);
+    ctx.drawImage(chartImg, margin, margin + titleH);
+    if (legendData) ctx.drawImage(legendData.img, margin, margin + titleH + chartImg.naturalHeight + legendGap);
+    const link = document.createElement('a'); link.download = 'pes-trimer_compare_' + new Date().toISOString().slice(0,10) + '.png';
+    link.href = out.toDataURL('image/png'); link.click();
+  }
+
+  // ---- Grid panel ----
+  const gridCharts = {};
+  function gridBuildToolbar() {
+    cmpBuildChipRow(
+      document.getElementById('grid-methods-row'),
+      methodOrder.map(m => ({ key:m, label:m })),
+      k => gridState.methods.has(k),
+      (k, btn) => {
+        if (gridState.methods.has(k)) { if (gridState.methods.size > 1) gridState.methods.delete(k); }
+        else gridState.methods.add(k);
+        btn.setAttribute('aria-pressed', gridState.methods.has(k));
+        gridRender();
+      }, k => mColor(k), 'data-grid-method');
+    cmpBuildChipRow(
+      document.getElementById('grid-rings-row'),
+      ['r1','r2','r3'].map(r => ({ key:r, label:ringStyles_LDM[r].label })),
+      k => gridState.rings.has(k),
+      (k, btn) => {
+        if (gridState.rings.has(k)) gridState.rings.delete(k);
+        else gridState.rings.add(k);
+        btn.setAttribute('aria-pressed', gridState.rings.has(k));
+        gridRender();
+      }, k => rColor(k), 'data-grid-ring');
+    cmpBuildDescriptorRow(document.getElementById('grid-desc-row'), gridState, gridRender, 'data-grid-desc');
+    document.getElementById('grid-preset-aroma').addEventListener('click', () => {
+      gridState.descriptors = new Set(['HOMA', 'HOMA_TOT', 'FROB']);
+      document.querySelectorAll('[data-grid-desc]').forEach(b => b.setAttribute('aria-pressed', gridState.descriptors.has(b.getAttribute('data-grid-desc'))));
+      gridRender();
+    });
+    document.getElementById('grid-clear').addEventListener('click', () => {
+      gridState.descriptors.clear();
+      document.querySelectorAll('[data-grid-desc]').forEach(b => b.setAttribute('aria-pressed','false'));
+      gridRender();
+    });
+    document.getElementById('grid-download').addEventListener('click', gridDownload);
+  }
+  function gridRender() {
+    const root = document.getElementById('grid-cards');
+    Object.values(gridCharts).forEach(ch => { try { ch.destroy(); } catch(_) {} });
+    for (const k in gridCharts) delete gridCharts[k];
+    root.innerHTML = '';
+    const activeKeys = [...gridState.descriptors];
+    if (!activeKeys.length) { root.innerHTML = '<p class="grid-empty">Coche des descripteurs ci-dessus pour les afficher en mini-graphes.</p>'; return; }
+    activeKeys.forEach((descKey, idx) => {
+      const d = cmpDescMeta(descKey);
+      if (!d) return;
+      const card = document.createElement('div'); card.className = 'grid-card';
+      const titleColor = cmpColor(idx);
+      const famSuffix = d.kind === 'homa36' ? ' · 36-pt' : d.kind === 'ldm' ? ' · per-ring (avg)' : ' · global';
+      card.innerHTML = `
+        <div class="grid-card-title">
+          <span style="color:${titleColor}">${d.label}</span>
+          <span class="grid-card-family">${d.family}${famSuffix}</span>
+        </div>
+        <div class="grid-card-canvas-wrap"><canvas id="grid-chart-${idx}"></canvas></div>`;
+      root.appendChild(card);
+      const datasets = [];
+      gridState.methods.forEach(method => {
+        const col = mColor(method);
+        const curve = cmpComputeCurve(gridState, descKey, method);
+        datasets.push({
+          label: `${d.label} (${method})`, data: curve,
+          borderColor: col, backgroundColor: col,
+          borderWidth: 1.8, pointRadius: 0, pointHoverRadius: 3,
+          borderDash: methodMeta[method].shape === 'triangle' ? [6,4] : (methodMeta[method].shape === 'rect' ? [2,3] : []),
+          tension: 0.15, spanGaps: true
+        });
+      });
+      const ctx = document.getElementById('grid-chart-' + idx).getContext('2d');
+      gridCharts[descKey] = new Chart(ctx, {
+        type: 'line', data: { datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: { duration: 100 },
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          layout: { padding: { top: 4, right: 6, bottom: 0, left: 4 } },
+          scales: {
+            x: { type: 'linear', min: -180, max: 180, ticks: { stepSize: 60, font: { size: 10 }, callback: v => v + '°' },
+                 title: { display: true, text: 'φ (°)', font: { size: 10 }, padding: { top: 2, bottom: 0 } },
+                 grid: { color: gridColor, drawTicks: false } },
+            y: { ticks: { font: { size: 10 } },
+                 title: { display: true, text: d.label, font: { size: 10 }, padding: { top: 0, bottom: 2 } },
+                 grid: { color: gridColor } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label} @ ${ctx.parsed.x.toFixed(0)}° : ${Number.isFinite(ctx.parsed.y) ? ctx.parsed.y.toFixed(3) : '—'}` } }
+          }
+        }
+      });
+    });
+  }
+  async function gridDownload() {
+    if (!gridState.descriptors.size) return;
+    const DPR = Math.max(1, window.devicePixelRatio || 1);
+    const F_TITLE = 30, F_SUB = Math.round(13 * DPR), F_CARD_TITLE = Math.round(14 * DPR);
+    const margin = Math.round(24 * DPR), lineGap = Math.round(7 * DPR);
+    const titleH = F_TITLE + F_SUB * 2 + lineGap * 3 + Math.round(10 * DPR);
+    const cardGap = Math.round(12 * DPR), cardTitleH = F_CARD_TITLE + Math.round(10 * DPR);
+    const cards = []; let idx = 0;
+    for (const descKey of gridState.descriptors) {
+      const ch = gridCharts[descKey]; if (!ch) { idx++; continue; }
+      const d = cmpDescMeta(descKey);
+      const img = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = ch.toBase64Image('image/png', 1); });
+      const fam = d.family + (d.kind === 'homa36' ? ' · 36-pt' : d.kind === 'ldm' ? ' · per-ring (avg)' : ' · global');
+      cards.push({ descKey, label: d.label, family: fam, img, color: cmpColor(idx) }); idx++;
+    }
+    if (!cards.length) return;
+    const COLS = 2, cardW = cards[0].img.naturalWidth, cardH = cards[0].img.naturalHeight + cardTitleH;
+    const rows = Math.ceil(cards.length / COLS);
+    const gridW = COLS * cardW + (COLS - 1) * cardGap, gridH = rows * cardH + (rows - 1) * cardGap;
+    const out = document.createElement('canvas');
+    out.width = gridW + margin * 2; out.height = gridH + margin * 2 + titleH;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, out.width, out.height); ctx.textBaseline = 'top';
+    let y = margin;
+    ctx.fillStyle = '#1A1A1A'; ctx.font = 'bold ' + F_TITLE + 'px -apple-system, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Trimer thiophene PES — Grid panel', margin, y); y += F_TITLE + lineGap;
+    ctx.font = F_SUB + 'px -apple-system, "Segoe UI", Arial, sans-serif'; ctx.fillStyle = '#6B6B6B';
+    ctx.fillText('Method : B3LYP / multiple basis sets (Gaussian 16)', margin, y); y += F_SUB + lineGap;
+    ctx.fillText(`Config: Methods ${[...gridState.methods].join(' + ')}  ·  Rings ${[...gridState.rings].sort().join('+')}  ·  ${cards.length} mini-graphes`, margin, y);
+    const baseY = margin + titleH;
+    cards.forEach((card, i) => {
+      const col = i % COLS, row = Math.floor(i / COLS);
+      const cx = margin + col * (cardW + cardGap), cy = baseY + row * (cardH + cardGap);
+      ctx.fillStyle = '#FAFAF7'; ctx.fillRect(cx, cy, cardW, cardH);
+      ctx.strokeStyle = '#E2E0DA'; ctx.lineWidth = 1; ctx.strokeRect(cx, cy, cardW, cardH);
+      ctx.fillStyle = card.color; ctx.font = 'bold ' + F_CARD_TITLE + 'px -apple-system, "Segoe UI", Arial, sans-serif';
+      ctx.fillText(card.label, cx + 8, cy + 6);
+      ctx.fillStyle = '#9A9A9A'; ctx.font = Math.round(11 * DPR) + 'px -apple-system, "Segoe UI", Arial, sans-serif';
+      const famW = ctx.measureText(card.family).width;
+      ctx.fillText(card.family, cx + cardW - famW - 8, cy + 8);
+      ctx.drawImage(card.img, cx, cy + cardTitleH);
+    });
+    const link = document.createElement('a'); link.download = 'pes-trimer_grid_' + new Date().toISOString().slice(0,10) + '.png';
+    link.href = out.toDataURL('image/png'); link.click();
+  }
+
+  cmpBuildToolbar(); cmpInit(); cmpRender();
+  gridBuildToolbar(); gridRender();
 
 })();
 </script>
