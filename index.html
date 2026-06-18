@@ -208,7 +208,8 @@
         <span class="label">Descripteurs</span>
       </div>
       <div class="compare-row">
-        <span class="label">Actions</span>
+        <span class="label">Options</span>
+        <button class="compare-chip" id="grid-pes" aria-pressed="true" title="Afficher la courbe PES en arrière-plan de chaque mini-graphe (axe Y droit en kcal/mol)">PES en arrière-plan</button>
         <button class="compare-chip" id="grid-preset-aroma">Preset aromaticité</button>
         <button class="compare-chip" id="grid-clear">Tout désélectionner</button>
       </div>
@@ -1133,6 +1134,7 @@
     methods: new Set(['6-311+G(d,p)']),
     rings:   new Set(['r1','r2','r3']),
     descriptors: new Set(['HOMA','HOMA_TOT']),
+    showPES: true,
   };
 
   // Compute a curve for (descriptor × method) over -180..180, averaging across active rings if per-ring.
@@ -1270,7 +1272,7 @@
           x: { type: 'linear', min: -180, max: 180, ticks: { stepSize: 60, callback: v => v + '°' },
                title: { display: true, text: 'φ  D(12,6,7,11) (°)' }, grid: { color: gridColor } },
           y: { title: { display: true, text: 'Valeur normalisée [0,1]' }, ticks: { color: axisColor }, grid: { color: gridColor } },
-          yPES: { display: false, position: 'right', title: { display: false }, grid: { drawOnChartArea: false } }
+          yPES: { display: false, position: 'right', title: { display: true, text: 'ΔE (kcal/mol)', font: { size: 12 } }, grid: { drawOnChartArea: false } }
         },
         plugins: {
           legend: { display: false },
@@ -1415,6 +1417,11 @@
         gridRender();
       }, k => rColor(k), 'data-grid-ring');
     cmpBuildDescriptorRow(document.getElementById('grid-desc-row'), gridState, gridRender, 'data-grid-desc');
+    document.getElementById('grid-pes').addEventListener('click', (e) => {
+      gridState.showPES = !gridState.showPES;
+      e.currentTarget.setAttribute('aria-pressed', gridState.showPES);
+      gridRender();
+    });
     document.getElementById('grid-preset-aroma').addEventListener('click', () => {
       gridState.descriptors = new Set(['HOMA', 'HOMA_TOT', 'FROB']);
       document.querySelectorAll('[data-grid-desc]').forEach(b => b.setAttribute('aria-pressed', gridState.descriptors.has(b.getAttribute('data-grid-desc'))));
@@ -1448,6 +1455,20 @@
         <div class="grid-card-canvas-wrap"><canvas id="grid-chart-${idx}"></canvas></div>`;
       root.appendChild(card);
       const datasets = [];
+      // PES en arrière-plan (1 courbe par méthode active)
+      if (gridState.showPES) {
+        gridState.methods.forEach(method => {
+          datasets.push({
+            label: `_pes_${method}`,
+            data: PES[method].map(p => ({ x: p[0], y: p[1] })),
+            borderColor: 'rgba(127,127,127,0.45)',
+            backgroundColor: 'rgba(127,127,127,0.08)',
+            borderWidth: 1.2, pointRadius: 0, pointHoverRadius: 0,
+            borderDash: methodMeta[method].shape === 'triangle' ? [4,3] : (methodMeta[method].shape === 'rect' ? [2,3] : []),
+            tension: 0.25, yAxisID: 'yPES', order: 10
+          });
+        });
+      }
       gridState.methods.forEach(method => {
         const col = mColor(method);
         const curve = cmpComputeCurve(gridState, descKey, method);
@@ -1456,7 +1477,7 @@
           borderColor: col, backgroundColor: col,
           borderWidth: 1.8, pointRadius: 0, pointHoverRadius: 3,
           borderDash: methodMeta[method].shape === 'triangle' ? [6,4] : (methodMeta[method].shape === 'rect' ? [2,3] : []),
-          tension: 0.15, spanGaps: true
+          tension: 0.15, spanGaps: true, yAxisID: 'y', order: 5
         });
       });
       const ctx = document.getElementById('grid-chart-' + idx).getContext('2d');
@@ -1472,11 +1493,21 @@
                  grid: { color: gridColor, drawTicks: false } },
             y: { ticks: { font: { size: 10 } },
                  title: { display: true, text: d.label, font: { size: 10 }, padding: { top: 0, bottom: 2 } },
-                 grid: { color: gridColor } }
+                 grid: { color: gridColor } },
+            yPES: { display: gridState.showPES, position: 'right',
+                    ticks: { font: { size: 9 }, color: 'rgba(127,127,127,0.7)' },
+                    title: { display: gridState.showPES, text: 'ΔE (kcal/mol)', font: { size: 9 }, color: 'rgba(127,127,127,0.7)' },
+                    grid: { drawOnChartArea: false } }
           },
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label} @ ${ctx.parsed.x.toFixed(0)}° : ${Number.isFinite(ctx.parsed.y) ? ctx.parsed.y.toFixed(3) : '—'}` } }
+            tooltip: { callbacks: { label: ctx => {
+              if (ctx.dataset.label && ctx.dataset.label.startsWith('_pes_')) {
+                const method = ctx.dataset.label.slice(5);
+                return `PES ${method} : ΔE = ${Number.isFinite(ctx.parsed.y) ? ctx.parsed.y.toFixed(2) : '—'} kcal/mol`;
+              }
+              return `${ctx.dataset.label} @ ${ctx.parsed.x.toFixed(0)}° : ${Number.isFinite(ctx.parsed.y) ? ctx.parsed.y.toFixed(3) : '—'}`;
+            } } }
           }
         }
       });
