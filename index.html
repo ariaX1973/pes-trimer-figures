@@ -210,6 +210,7 @@
       <div class="compare-row">
         <span class="label">Options</span>
         <button class="compare-chip" id="grid-pes" aria-pressed="true" title="Afficher la courbe PES en arrière-plan de chaque mini-graphe (axe Y droit en kcal/mol)">PES en arrière-plan</button>
+        <button class="compare-chip" id="grid-separate" aria-pressed="false" title="Pour chaque descripteur per-cycle (HOMA, LDM), créer un mini-graphe distinct par cycle actif (sinon : moyenne des cycles)">Séparer par cycle</button>
         <button class="compare-chip" id="grid-preset-aroma">Preset aromaticité</button>
         <button class="compare-chip" id="grid-clear">Tout désélectionner</button>
       </div>
@@ -1135,6 +1136,7 @@
     rings:   new Set(['r1','r2','r3']),
     descriptors: new Set(['HOMA','HOMA_TOT']),
     showPES: true,
+    separateByCycle: false,
   };
 
   // Compute a curve for (descriptor × method) over -180..180, averaging across active rings if per-ring.
@@ -1422,6 +1424,11 @@
       e.currentTarget.setAttribute('aria-pressed', gridState.showPES);
       gridRender();
     });
+    document.getElementById('grid-separate').addEventListener('click', (e) => {
+      gridState.separateByCycle = !gridState.separateByCycle;
+      e.currentTarget.setAttribute('aria-pressed', gridState.separateByCycle);
+      gridRender();
+    });
     document.getElementById('grid-preset-aroma').addEventListener('click', () => {
       gridState.descriptors = new Set(['HOMA', 'HOMA_TOT', 'FROB']);
       document.querySelectorAll('[data-grid-desc]').forEach(b => b.setAttribute('aria-pressed', gridState.descriptors.has(b.getAttribute('data-grid-desc'))));
@@ -1441,16 +1448,32 @@
     root.innerHTML = '';
     const activeKeys = [...gridState.descriptors];
     if (!activeKeys.length) { root.innerHTML = '<p class="grid-empty">Coche des descripteurs ci-dessus pour les afficher en mini-graphes.</p>'; return; }
-    activeKeys.forEach((descKey, idx) => {
+    // Build card specs : per-ring descriptors may be split into N ring-cards when separateByCycle
+    const cardSpecs = [];
+    const sortedRings = ['r1','r2','r3'].filter(r => gridState.rings.has(r));
+    activeKeys.forEach((descKey) => {
       const d = cmpDescMeta(descKey);
       if (!d) return;
+      const isPerRing = (d.kind === 'homa36' || d.kind === 'ldm');
+      if (gridState.separateByCycle && isPerRing) {
+        sortedRings.forEach(r => cardSpecs.push({ descKey, d, ring: r }));
+      } else {
+        cardSpecs.push({ descKey, d, ring: null });
+      }
+    });
+
+    cardSpecs.forEach((spec, idx) => {
+      const { descKey, d, ring } = spec;
       const card = document.createElement('div'); card.className = 'grid-card';
-      const titleColor = cmpColor(idx);
-      const famSuffix = d.kind === 'homa36' ? ' · 36-pt' : d.kind === 'ldm' ? ' · per-ring (avg)' : ' · global';
+      const titleColor = ring ? rColor(ring) : cmpColor(idx);
+      const famSuffix = d.kind === 'homa36' ? ' · 36-pt' : d.kind === 'ldm' ? ' · per-ring' : ' · global';
+      const aggSuffix = ring ? ` · ${ringStyles_LDM[ring].label}`
+                             : (d.kind === 'homa36' || d.kind === 'ldm') ? ' · moy. rings actifs' : '';
+      const splitSuffix = ring ? ` <span style="color:var(--text-tertiary);font-weight:400;font-size:0.85em">— ${ringStyles_LDM[ring].label}</span>` : '';
       card.innerHTML = `
         <div class="grid-card-title">
-          <span style="color:${titleColor}">${d.label}</span>
-          <span class="grid-card-family">${d.family}${famSuffix}</span>
+          <span style="color:${titleColor}">${d.label}${splitSuffix}</span>
+          <span class="grid-card-family">${d.family}${famSuffix}${aggSuffix}</span>
         </div>
         <div class="grid-card-canvas-wrap"><canvas id="grid-chart-${idx}"></canvas></div>`;
       root.appendChild(card);
@@ -1469,9 +1492,11 @@
           });
         });
       }
+      // Lookup state : when ring is forced, restrict rings to the single one
+      const lookupState = ring ? Object.assign({}, gridState, { rings: new Set([ring]) }) : gridState;
       gridState.methods.forEach(method => {
         const col = mColor(method);
-        const curve = cmpComputeCurve(gridState, descKey, method);
+        const curve = cmpComputeCurve(lookupState, descKey, method);
         datasets.push({
           label: `${d.label} (${method})`, data: curve,
           borderColor: col, backgroundColor: col,
@@ -1481,7 +1506,8 @@
         });
       });
       const ctx = document.getElementById('grid-chart-' + idx).getContext('2d');
-      gridCharts[descKey] = new Chart(ctx, {
+      const chartKey = ring ? `${descKey}__r_${ring}` : descKey;
+      gridCharts[chartKey] = new Chart(ctx, {
         type: 'line', data: { datasets },
         options: {
           responsive: true, maintainAspectRatio: false, animation: { duration: 100 },
@@ -1521,12 +1547,18 @@
     const titleH = F_TITLE + F_SUB * 2 + lineGap * 3 + Math.round(10 * DPR);
     const cardGap = Math.round(12 * DPR), cardTitleH = F_CARD_TITLE + Math.round(10 * DPR);
     const cards = []; let idx = 0;
-    for (const descKey of gridState.descriptors) {
-      const ch = gridCharts[descKey]; if (!ch) { idx++; continue; }
+    for (const [chartKey, ch] of Object.entries(gridCharts)) {
+      if (!ch) { idx++; continue; }
+      let descKey = chartKey, ring = null;
+      const ir = chartKey.indexOf('__r_');
+      if (ir >= 0) { descKey = chartKey.slice(0, ir); ring = chartKey.slice(ir + 4); }
       const d = cmpDescMeta(descKey);
+      if (!d) { idx++; continue; }
       const img = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = ch.toBase64Image('image/png', 1); });
-      const fam = d.family + (d.kind === 'homa36' ? ' · 36-pt' : d.kind === 'ldm' ? ' · per-ring (avg)' : ' · global');
-      cards.push({ descKey, label: d.label, family: fam, img, color: cmpColor(idx) }); idx++;
+      const label = ring ? `${d.label} — ${ringStyles_LDM[ring].label}` : d.label;
+      const fam = d.family + (d.kind === 'homa36' ? ' · 36-pt' : d.kind === 'ldm' ? ' · per-ring' : ' · global') + (ring ? ` · ${ringStyles_LDM[ring].label}` : '');
+      const color = ring ? rColor(ring) : cmpColor(idx);
+      cards.push({ chartKey, label, family: fam, img, color }); idx++;
     }
     if (!cards.length) return;
     const COLS = 2, cardW = cards[0].img.naturalWidth, cardH = cards[0].img.naturalHeight + cardTitleH;
@@ -1541,7 +1573,7 @@
     ctx.fillText('Trimer thiophene PES — Grid panel', margin, y); y += F_TITLE + lineGap;
     ctx.font = F_SUB + 'px -apple-system, "Segoe UI", Arial, sans-serif'; ctx.fillStyle = '#6B6B6B';
     ctx.fillText('Method : B3LYP / multiple basis sets (Gaussian 16)', margin, y); y += F_SUB + lineGap;
-    ctx.fillText(`Config: Methods ${[...gridState.methods].join(' + ')}  ·  Rings ${[...gridState.rings].sort().join('+')}  ·  ${cards.length} mini-graphes`, margin, y);
+    ctx.fillText(`Config: Methods ${[...gridState.methods].join(' + ')}  ·  Rings ${[...gridState.rings].sort().join('+')}  ·  ${cards.length} mini-graphes${gridState.separateByCycle ? '  ·  séparés par cycle' : ''}`, margin, y);
     const baseY = margin + titleH;
     cards.forEach((card, i) => {
       const col = i % COLS, row = Math.floor(i / COLS);
